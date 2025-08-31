@@ -1,62 +1,45 @@
 "use client"
 
 import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Icons } from "@/components/ui/icons"
-import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { CheckCircle, Mail, User, Lock, Shield, ArrowRight, Sparkles } from "lucide-react"
-
-const registerSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
-
-type RegisterFormData = z.infer<typeof registerSchema>
+import { signUpAction, resendVerificationAction } from "@/lib/auth/actions"
 
 interface RegisterFormProps extends React.ComponentProps<typeof Card> {}
 
 export function RegisterForm({ className, ...props }: RegisterFormProps) {
-  const { signUp, isEmailConfirmationSent, resendVerificationEmail } = useAuth()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const [isEmailConfirmationSent, setIsEmailConfirmationSent] = React.useState<boolean>(false)
   const [registeredEmail, setRegisteredEmail] = React.useState<string>("")
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-  })
-
-  async function onSubmit(data: RegisterFormData) {
+  async function handleSubmit(formData: FormData) {
     setIsLoading(true)
     
     try {
-      const { error, data: signUpData } = await signUp(data.email, data.password, data.fullName)
+      const email = formData.get("email") as string
+      const password = formData.get("password") as string
+      const confirmPassword = formData.get("confirmPassword") as string
       
-      if (error) {
-        toast.error(error.message || "Failed to create account")
-      } else {
-        setRegisteredEmail(data.email)
-        toast.success("Account created successfully! Please check your email to verify your account.")
-        reset() // Clear the form
+      // Client-side validation
+      if (password !== confirmPassword) {
+        toast.error("Passwords don't match")
+        setIsLoading(false)
+        return
       }
+      
+      await signUpAction(formData)
+      setRegisteredEmail(email)
+      setIsEmailConfirmationSent(true)
+      toast.success("Account created successfully! Please check your email to verify your account.")
     } catch (error) {
-      toast.error("An unexpected error occurred")
-    } finally {
+      console.error("Sign up error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to create account"
+      toast.error(errorMessage)
       setIsLoading(false)
     }
   }
@@ -65,14 +48,12 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
     if (!registeredEmail) return
     
     try {
-      const { error } = await resendVerificationEmail(registeredEmail)
-      if (error) {
-        toast.error("Failed to resend verification email")
-      } else {
-        toast.success("Verification email sent successfully!")
-      }
+      const formData = new FormData()
+      formData.append("email", registeredEmail)
+      await resendVerificationAction(formData)
+      toast.success("Verification email sent successfully!")
     } catch (error) {
-      toast.error("An unexpected error occurred")
+      toast.error("Failed to resend verification email")
     }
   }
 
@@ -151,7 +132,7 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
           Enter your information below to create your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form action={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-sm font-medium">
@@ -161,18 +142,14 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="fullName"
+                name="fullName"
                 type="text"
                 placeholder="Enter your full name"
-                className={`pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 ${errors.fullName ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
-                {...register("fullName")}
+                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                required
+                minLength={2}
               />
             </div>
-            {errors.fullName && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <Icons.alert className="h-3 w-3" />
-                {errors.fullName.message}
-              </p>
-            )}
           </div>
           
           <div className="space-y-2">
@@ -183,18 +160,13 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="Enter your email"
-                className={`pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
-                {...register("email")}
+                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                required
               />
             </div>
-            {errors.email && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <Icons.alert className="h-3 w-3" />
-                {errors.email.message}
-              </p>
-            )}
           </div>
           
           <div className="space-y-2">
@@ -205,18 +177,14 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 id="password" 
+                name="password"
                 type="password" 
                 placeholder="Create a password"
-                className={`pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
-                {...register("password")}
+                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                required
+                minLength={6}
               />
             </div>
-            {errors.password && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <Icons.alert className="h-3 w-3" />
-                {errors.password.message}
-              </p>
-            )}
           </div>
           
           <div className="space-y-2">
@@ -227,18 +195,14 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
               <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 id="confirmPassword" 
+                name="confirmPassword"
                 type="password" 
                 placeholder="Confirm your password"
-                className={`pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 ${errors.confirmPassword ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
-                {...register("confirmPassword")}
+                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                required
+                minLength={6}
               />
             </div>
-            {errors.confirmPassword && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <Icons.alert className="h-3 w-3" />
-                {errors.confirmPassword.message}
-              </p>
-            )}
           </div>
         </CardContent>
         <CardFooter className="pt-6">

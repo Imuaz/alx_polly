@@ -1,10 +1,12 @@
 import { Metadata } from "next"
+import { Suspense } from "react"
 import { PollsGrid } from "@/components/polls/polls-grid"
 import { PollsFilters } from "@/components/polls/polls-filters"
 import { CreatePollButton } from "@/components/polls/create-poll-button"
 import { UserProfile } from "@/components/auth/user-profile"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { EmailVerificationBanner } from "@/components/auth/email-verification-banner"
+import { SuccessMessage } from "@/components/ui/success-message"
 import { BarChart3, TrendingUp, Users } from "lucide-react"
 
 export const metadata: Metadata = {
@@ -18,6 +20,11 @@ export default function PollsPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="container mx-auto py-8 space-y-8">
           <EmailVerificationBanner />
+          
+          {/* Success Message */}
+          <Suspense fallback={null}>
+            <SuccessMessage />
+          </Suspense>
           
           {/* Header Section */}
           <div className="relative">

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,13 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Icons } from "@/components/ui/icons"
 import { Plus, X } from "lucide-react"
+import { createPoll } from "@/lib/polls/actions"
+// import { toast } from "sonner"
 
 export function CreatePollForm() {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [options, setOptions] = useState(["", ""])
   const [allowMultipleVotes, setAllowMultipleVotes] = useState(false)
   const [anonymousVoting, setAnonymousVoting] = useState(false)
+  const [category, setCategory] = useState("")
 
   const addOption = () => {
     setOptions([...options, ""])
@@ -35,19 +36,21 @@ export function CreatePollForm() {
     setOptions(newOptions)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (formData: FormData) => {
     setIsLoading(true)
-
-    // TODO: Implement actual form submission
-    setTimeout(() => {
+    
+    try {
+      await createPoll(formData)
+      // Success handled by Server Action redirect
+    } catch (error) {
+      console.error("Error creating poll:", error)
+      alert(error instanceof Error ? error.message : "Failed to create poll")
       setIsLoading(false)
-      router.push("/polls")
-    }, 2000)
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form action={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Poll Details</CardTitle>
@@ -60,6 +63,7 @@ export function CreatePollForm() {
             <Label htmlFor="title">Poll Title *</Label>
             <Input
               id="title"
+              name="title"
               placeholder="What's your favorite programming language?"
               required
             />
@@ -68,6 +72,7 @@ export function CreatePollForm() {
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
+              name="description"
               placeholder="Provide more context about your poll..."
               rows={3}
             />
@@ -75,7 +80,7 @@ export function CreatePollForm() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select>
+              <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -88,11 +93,13 @@ export function CreatePollForm() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              <input type="hidden" name="category" value={category} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
               <Input
                 id="endDate"
+                name="endDate"
                 type="date"
                 min={new Date().toISOString().split('T')[0]}
               />
@@ -112,6 +119,7 @@ export function CreatePollForm() {
           {options.map((option, index) => (
             <div key={index} className="flex items-center space-x-2">
               <Input
+                name={`option-${index}`}
                 placeholder={`Option ${index + 1}`}
                 value={option}
                 onChange={(e) => updateOption(index, e.target.value)}
@@ -160,6 +168,7 @@ export function CreatePollForm() {
               checked={allowMultipleVotes}
               onCheckedChange={setAllowMultipleVotes}
             />
+            <input type="hidden" name="allowMultipleVotes" value={allowMultipleVotes ? "on" : ""} />
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
@@ -172,6 +181,7 @@ export function CreatePollForm() {
               checked={anonymousVoting}
               onCheckedChange={setAnonymousVoting}
             />
+            <input type="hidden" name="anonymousVoting" value={anonymousVoting ? "on" : ""} />
           </div>
         </CardContent>
       </Card>
@@ -180,7 +190,7 @@ export function CreatePollForm() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.back()}
+          onClick={() => window.history.back()}
         >
           Cancel
         </Button>

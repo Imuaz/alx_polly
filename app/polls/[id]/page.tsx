@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { PollView } from "@/components/polls/poll-view"
 import { PollResults } from "@/components/polls/poll-results"
 import { SharePoll } from "@/components/polls/share-poll"
+import { getPoll } from "@/lib/polls/actions"
 
 interface PollPageProps {
   params: Promise<{
@@ -12,32 +13,37 @@ interface PollPageProps {
 
 export async function generateMetadata({ params }: PollPageProps): Promise<Metadata> {
   const { id } = await params
-  // TODO: Fetch poll data and generate metadata
+  const poll = await getPoll(id)
+  
+  if (!poll) {
+    return {
+      title: "Poll Not Found | Polling App",
+      description: "The requested poll could not be found",
+    }
+  }
+
   return {
-    title: `Poll | Polling App`,
-    description: "Vote on this poll and see the results",
+    title: `${poll.title} | Polling App`,
+    description: poll.description || "Vote on this poll and see the results",
   }
 }
 
 export default async function PollPage({ params }: PollPageProps) {
   const { id } = await params
+  const poll = await getPoll(id)
   
-  // TODO: Fetch poll data by ID
-  const pollId = id
-  
-  // Placeholder - replace with actual data fetching
-  if (!pollId) {
+  if (!poll) {
     notFound()
   }
 
   return (
     <div className="container mx-auto py-6 max-w-4xl">
       <div className="space-y-6">
-        <PollView pollId={pollId} />
+        <PollView poll={poll} />
         
         <div className="grid gap-6 md:grid-cols-2">
-          <PollResults pollId={pollId} />
-          <SharePoll pollId={pollId} />
+          <PollResults poll={poll} />
+          <SharePoll poll={poll} />
         </div>
       </div>
     </div>

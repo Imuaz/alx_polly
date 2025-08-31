@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Share2, Copy, Check, Twitter, Facebook, Linkedin } from "lucide-react"
+import { Poll } from "@/lib/types/poll"
 
 interface SharePollProps {
-  pollId: string
+  poll: Poll
 }
 
-export function SharePoll({ pollId }: SharePollProps) {
+export function SharePoll({ poll }: SharePollProps) {
   const [copied, setCopied] = useState(false)
-  const pollUrl = `${window.location.origin}/polls/${pollId}`
+  const pollUrl = `${window.location.origin}/polls/${poll.id}`
 
   const handleCopyLink = async () => {
     try {
@@ -26,7 +27,7 @@ export function SharePoll({ pollId }: SharePollProps) {
   }
 
   const handleShare = (platform: string) => {
-    const text = "Check out this poll and vote!"
+    const text = `Check out this poll: "${poll.title}" and vote!`
     let url = ""
     
     switch (platform) {

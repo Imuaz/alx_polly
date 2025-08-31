@@ -1,62 +1,39 @@
 "use client"
 
 import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Icons } from "@/components/ui/icons"
-import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { AlertCircle, Mail, Lock, ArrowRight } from "lucide-react"
-
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-})
-
-type LoginFormData = z.infer<typeof loginSchema>
+import { signInAction } from "@/lib/auth/actions"
 
 interface LoginFormProps extends React.ComponentProps<typeof Card> {}
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
-  const { signIn, isEmailVerified } = useAuth()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  })
-
-  async function onSubmit(data: LoginFormData) {
+  async function handleSubmit(formData: FormData) {
     setIsLoading(true)
     
     try {
-      const { error } = await signIn(data.email, data.password)
-      
-      if (error) {
-        // Handle specific error cases
-        if (error.message.includes('Email not confirmed')) {
-          toast.error("Please verify your email address before signing in. Check your inbox for a verification link.")
-        } else if (error.message.includes('Invalid login credentials')) {
-          toast.error("Invalid email or password. Please try again.")
-        } else {
-          toast.error(error.message || "Failed to sign in")
-        }
-      } else {
-        // Success message will be handled by the auth context redirect
-        toast.success("Signed in successfully")
-      }
+      await signInAction(formData)
+      toast.success("Signed in successfully")
     } catch (error) {
-      toast.error("An unexpected error occurred")
-    } finally {
+      console.error("Sign in error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to sign in"
+      
+      // Handle specific error cases
+      if (errorMessage.includes('Email not confirmed')) {
+        toast.error("Please verify your email address before signing in. Check your inbox for a verification link.")
+      } else if (errorMessage.includes('Invalid login credentials')) {
+        toast.error("Invalid email or password. Please try again.")
+      } else {
+        toast.error(errorMessage)
+      }
       setIsLoading(false)
     }
   }
@@ -74,7 +51,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form action={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">
@@ -84,18 +61,13 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="Enter your email"
-                className={`pl-10 h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
-                {...register("email")}
+                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                required
               />
             </div>
-            {errors.email && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.email.message}
-              </p>
-            )}
           </div>
           
           <div className="space-y-2">
@@ -106,18 +78,14 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 id="password" 
+                name="password"
                 type="password" 
                 placeholder="Enter your password"
-                className={`pl-10 h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${errors.password ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
-                {...register("password")}
+                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                required
+                minLength={6}
               />
             </div>
-            {errors.password && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.password.message}
-              </p>
-            )}
           </div>
           
           {/* Email verification reminder */}
