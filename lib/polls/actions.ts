@@ -1,21 +1,42 @@
 "use server"
 
+/**
+ * Poll Management Server Actions
+ * 
+ * This module handles all poll-related operations including creation, voting,
+ * fetching, and deletion. Uses Supabase for data persistence and Next.js
+ * Server Actions for form handling with proper error handling and validation.
+ */
+
 import { createServerComponentClient } from "@/lib/supabase-server"
 import { CreatePollData, Poll, PollFilters } from "@/lib/types/poll"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+/**
+ * Creates a new poll with options and settings
+ * 
+ * @param formData - Form data containing poll details and options
+ * @throws {Error} When user is not authenticated or poll creation fails
+ * 
+ * Flow:
+ * 1. Authenticate user and extract form data
+ * 2. Validate required fields and options
+ * 3. Create poll record in database
+ * 4. Create associated poll options
+ * 5. Redirect to polls page with success message
+ */
 export async function createPoll(formData: FormData) {
   try {
     const supabase = await createServerComponentClient()
     
-    // Get current user
+    // Verify user authentication before allowing poll creation
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
       throw new Error("Authentication required")
     }
 
-    // Extract form data
+    // Extract poll metadata from form
     const title = formData.get("title") as string
     const description = formData.get("description") as string
     const category = formData.get("category") as string
@@ -23,7 +44,7 @@ export async function createPoll(formData: FormData) {
     const allowMultipleVotes = formData.get("allowMultipleVotes") === "on"
     const anonymousVoting = formData.get("anonymousVoting") === "on"
     
-    // Get options from form data
+    // Extract poll options from dynamic form fields
     const options: string[] = []
     let optionIndex = 0
     while (formData.get(`option-${optionIndex}`) !== null) {
@@ -34,24 +55,24 @@ export async function createPoll(formData: FormData) {
       optionIndex++
     }
 
-    // Validate required fields
+    // Validate poll requirements
     if (!title || !category || options.length < 2) {
       throw new Error("Title, category, and at least 2 options are required")
     }
 
-    // Create poll in database
+    // Create the main poll record
     const { data: poll, error: pollError } = await supabase
       .from("polls")
       .insert({
         title,
         description: description || null,
         category,
-        status: "active",
-        ends_at: endDate || null,
+        status: "active", // New polls start as active
+        ends_at: endDate || null, // Optional end date
         allow_multiple_votes: allowMultipleVotes,
         anonymous_voting: anonymousVoting,
         created_by: user.id,
-        total_votes: 0
+        total_votes: 0 // Initialize vote count
       })
       .select()
       .single()
@@ -60,12 +81,12 @@ export async function createPoll(formData: FormData) {
       throw new Error(`Failed to create poll: ${pollError.message}`)
     }
 
-    // Create poll options
+    // Create poll options with proper ordering
     const optionInserts = options.map((optionText, index) => ({
       poll_id: poll.id,
       text: optionText,
-      votes: 0,
-      order_index: index
+      votes: 0, // Initialize vote count for each option
+      order_index: index // Maintain option order
     }))
 
     const { error: optionsError } = await supabase
@@ -76,6 +97,7 @@ export async function createPoll(formData: FormData) {
       throw new Error(`Failed to create poll options: ${optionsError.message}`)
     }
 
+    // Clear polls cache and redirect with success message
     revalidatePath("/polls")
     redirect("/polls?success=Poll created successfully!")
   } catch (error) {
@@ -84,17 +106,31 @@ export async function createPoll(formData: FormData) {
   }
 }
 
+/**
+ * Records user votes for a poll
+ * 
+ * @param pollId - The ID of the poll to vote on
+ * @param optionIds - Array of option IDs the user is voting for
+ * @returns {Object} Success response
+ * @throws {Error} When user is not authenticated, already voted, or voting fails
+ * 
+ * Flow:
+ * 1. Authenticate user and check for existing votes
+ * 2. Validate poll status and voting rules
+ * 3. Record vote(s) in the database
+ * 4. Vote counts are updated automatically via database triggers
+ */
 export async function votePoll(pollId: string, optionIds: string[]) {
   try {
     const supabase = await createServerComponentClient()
     
-    // Get current user
+    // Verify user authentication before allowing votes
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
       throw new Error("Authentication required")
     }
 
-    // Check if user already voted
+    // Check if user has already voted on this poll
     const { data: existingVote } = await supabase
       .from("poll_votes")
       .select("id")
@@ -106,7 +142,7 @@ export async function votePoll(pollId: string, optionIds: string[]) {
       throw new Error("You have already voted on this poll")
     }
 
-    // Get poll details to check if multiple votes are allowed
+    // Get poll configuration to validate voting rules
     const { data: poll, error: pollError } = await supabase
       .from("polls")
       .select("allow_multiple_votes, status")
@@ -117,15 +153,17 @@ export async function votePoll(pollId: string, optionIds: string[]) {
       throw new Error("Poll not found")
     }
 
+    // Ensure poll is still accepting votes
     if (poll.status !== "active") {
       throw new Error("This poll is no longer active")
     }
 
+    // Validate multiple vote selection against poll settings
     if (!poll.allow_multiple_votes && optionIds.length > 1) {
       throw new Error("Only one option can be selected for this poll")
     }
 
-    // Record the vote(s) - create separate records for each option
+    // Create vote records - one for each selected option
     const voteInserts = optionIds.map(optionId => ({
       poll_id: pollId,
       user_id: user.id,
@@ -140,8 +178,10 @@ export async function votePoll(pollId: string, optionIds: string[]) {
       throw new Error(`Failed to record vote: ${voteError.message}`)
     }
 
-    // Vote counts are automatically updated by database triggers
+    // Note: Vote counts are automatically updated by database triggers
+    // This ensures data consistency and reduces race conditions
 
+    // Clear poll page cache to show updated results
     revalidatePath(`/polls/${pollId}`)
     return { success: true }
   } catch (error) {
@@ -150,10 +190,23 @@ export async function votePoll(pollId: string, optionIds: string[]) {
   }
 }
 
+/**
+ * Fetches polls with optional filtering and sorting
+ * 
+ * @param filters - Optional filters for category, status, search, and sorting
+ * @returns {Promise<Poll[]>} Array of polls matching the filters
+ * 
+ * Features:
+ * - Category and status filtering
+ * - Text search across title and description
+ * - Sorting by creation date, vote count, or end date
+ * - Includes poll options with vote counts
+ */
 export async function getPolls(filters?: PollFilters): Promise<Poll[]> {
   try {
     const supabase = await createServerComponentClient()
     
+    // Build base query with poll options included
     let query = supabase
       .from("polls")
       .select(`
@@ -166,20 +219,22 @@ export async function getPolls(filters?: PollFilters): Promise<Poll[]> {
         )
       `)
 
-    // Apply filters
+    // Apply category filter if specified
     if (filters?.category) {
       query = query.eq("category", filters.category)
     }
 
+    // Apply status filter if specified
     if (filters?.status) {
       query = query.eq("status", filters.status)
     }
 
+    // Apply text search across title and description
     if (filters?.search) {
       query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
     }
 
-    // Apply sorting
+    // Apply sorting based on user preference
     const sortBy = filters?.sortBy || "created_at"
     const sortOrder = filters?.sortOrder || "desc"
     
@@ -197,7 +252,7 @@ export async function getPolls(filters?: PollFilters): Promise<Poll[]> {
       throw new Error(`Failed to fetch polls: ${error.message}`)
     }
 
-    // Transform data to match Poll interface
+    // Transform database response to match Poll interface
     return data?.map(poll => ({
       id: poll.id,
       title: poll.title,
@@ -219,14 +274,26 @@ export async function getPolls(filters?: PollFilters): Promise<Poll[]> {
     })) || []
   } catch (error) {
     console.error("Error fetching polls:", error)
-    return []
+    return [] // Return empty array on error for better UX
   }
 }
 
+/**
+ * Fetches a single poll by ID with detailed information
+ * 
+ * @param id - The poll ID to fetch
+ * @returns {Promise<Poll | null>} Poll object with options and percentages, or null if not found
+ * 
+ * Features:
+ * - Includes all poll options with vote counts
+ * - Calculates vote percentages for results display
+ * - Returns null for non-existent polls (graceful handling)
+ */
 export async function getPoll(id: string): Promise<Poll | null> {
   try {
     const supabase = await createServerComponentClient()
     
+    // Fetch poll with all associated options
     const { data, error } = await supabase
       .from("polls")
       .select(`
@@ -249,7 +316,7 @@ export async function getPoll(id: string): Promise<Poll | null> {
       return null
     }
 
-    // Transform data to match Poll interface
+    // Transform database response with calculated percentages
     return {
       id: data.id,
       title: data.title,
@@ -266,25 +333,38 @@ export async function getPoll(id: string): Promise<Poll | null> {
         id: option.id,
         text: option.text,
         votes: option.votes,
+        // Calculate percentage for results visualization
         percentage: data.total_votes > 0 ? Math.round((option.votes / data.total_votes) * 100) : 0
       })) || []
     }
   } catch (error) {
     console.error("Error fetching poll:", error)
-    return null
+    return null // Return null for graceful error handling
   }
 }
 
+/**
+ * Fetches all polls created by the current user
+ * 
+ * @returns {Promise<Poll[]>} Array of polls created by the authenticated user
+ * 
+ * Features:
+ * - Only returns polls created by the current user
+ * - Ordered by creation date (newest first)
+ * - Includes all poll options and vote counts
+ * - Returns empty array if user is not authenticated
+ */
 export async function getUserPolls() {
   try {
     const supabase = await createServerComponentClient()
     
-    // Get current user
+    // Get current user to filter their polls
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
-      return []
+      return [] // Return empty array if not authenticated
     }
 
+    // Fetch polls created by the current user
     const { data, error } = await supabase
       .from("polls")
       .select(`
@@ -297,13 +377,13 @@ export async function getUserPolls() {
         )
       `)
       .eq("created_by", user.id)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }) // Newest first
 
     if (error) {
       throw new Error(`Failed to fetch user polls: ${error.message}`)
     }
 
-    // Transform data to match Poll interface
+    // Transform database response to match Poll interface
     return data?.map((poll: any) => ({
       id: poll.id,
       title: poll.title,
@@ -325,21 +405,37 @@ export async function getUserPolls() {
     })) || []
   } catch (error) {
     console.error("Error fetching user polls:", error)
-    return []
+    return [] // Return empty array on error for better UX
   }
 }
 
+/**
+ * Deletes a poll and all associated data
+ * 
+ * @param pollId - The ID of the poll to delete
+ * @throws {Error} When user is not authenticated, doesn't own the poll, or deletion fails
+ * 
+ * Security:
+ * - Only allows users to delete their own polls
+ * - Verifies ownership before deletion
+ * - Database cascading handles cleanup of options and votes
+ * 
+ * Flow:
+ * 1. Authenticate user and verify poll ownership
+ * 2. Delete poll record (cascades to options and votes)
+ * 3. Clear relevant caches and redirect with success message
+ */
 export async function deletePoll(pollId: string) {
   try {
     const supabase = await createServerComponentClient()
     
-    // Get current user
+    // Verify user authentication before allowing deletion
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
       throw new Error("Authentication required")
     }
 
-    // Check if user owns the poll
+    // Verify user owns the poll before allowing deletion
     const { data: poll, error: pollError } = await supabase
       .from("polls")
       .select("created_by")
@@ -350,11 +446,14 @@ export async function deletePoll(pollId: string) {
       throw new Error(`Failed to find poll: ${pollError.message}`)
     }
 
+    // Security check: only allow deletion of own polls
     if (poll.created_by !== user.id) {
       throw new Error("You can only delete your own polls")
     }
 
-    // Delete the poll (cascade will handle options and votes)
+    // Delete the poll - database cascade will handle cleanup of:
+    // - poll_options table entries
+    // - poll_votes table entries
     const { error: deleteError } = await supabase
       .from("polls")
       .delete()
@@ -364,6 +463,7 @@ export async function deletePoll(pollId: string) {
       throw new Error(`Failed to delete poll: ${deleteError.message}`)
     }
 
+    // Clear caches for pages that might show this poll
     revalidatePath("/polls")
     revalidatePath("/dashboard")
     redirect("/dashboard?success=Poll deleted successfully!")

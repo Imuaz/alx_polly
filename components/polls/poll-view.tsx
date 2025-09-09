@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * Poll Voting Interface Component
+ * 
+ * Handles the interactive voting experience for polls, including:
+ * - Single and multiple choice voting interfaces
+ * - Real-time results display after voting
+ * - Vote validation and submission
+ * - Progress bars and percentage calculations
+ */
+
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,18 +28,26 @@ interface PollViewProps {
 }
 
 export function PollView({ poll }: PollViewProps) {
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // State management for voting interface
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]); // Track selected option IDs
+  const [hasVoted, setHasVoted] = useState(false); // Toggle between voting and results view
+  const [isLoading, setIsLoading] = useState(false); // Loading state during vote submission
 
+  /**
+   * Handles vote submission to the server
+   * 
+   * Validates selection, submits votes via server action,
+   * and transitions to results view on success
+   */
   const handleVote = async () => {
     if (selectedOptions.length === 0) return
 
     setIsLoading(true);
 
     try {
+      // Submit votes using server action
       await votePoll(poll.id, selectedOptions)
-      setHasVoted(true)
+      setHasVoted(true) // Switch to results view
       toast.success("Vote submitted successfully!")
     } catch (error) {
       console.error("Voting error:", error);
@@ -41,18 +59,29 @@ export function PollView({ poll }: PollViewProps) {
     }
   };
 
+  /**
+   * Handles option selection based on poll voting rules
+   * 
+   * @param optionId - The ID of the option being selected/deselected
+   * 
+   * For single-choice polls: replaces current selection
+   * For multiple-choice polls: toggles option in selection array
+   */
   const handleOptionSelect = (optionId: string) => {
     if (poll.allowMultipleVotes) {
+      // Toggle option in multi-select mode
       setSelectedOptions((prev) =>
         prev.includes(optionId)
-          ? prev.filter((id) => id !== optionId)
-          : [...prev, optionId],
+          ? prev.filter((id) => id !== optionId) // Remove if already selected
+          : [...prev, optionId], // Add if not selected
       );
     } else {
+      // Replace selection in single-select mode
       setSelectedOptions([optionId]);
     }
   };
 
+  // Results view - shown after user has voted
   if (hasVoted) {
     return (
       <Card>
@@ -67,6 +96,7 @@ export function PollView({ poll }: PollViewProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Poll metadata display */}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
@@ -83,8 +113,11 @@ export function PollView({ poll }: PollViewProps) {
                 </div>
               )}
             </div>
+            
+            {/* Results visualization with progress bars */}
             <div className="space-y-3">
               {poll.options.map((option) => {
+                // Calculate percentage for progress bar
                 const percentage = poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0
                 return (
                   <div key={option.id} className="space-y-2">
@@ -94,6 +127,7 @@ export function PollView({ poll }: PollViewProps) {
                         {option.votes} votes ({percentage.toFixed(1)}%)
                       </span>
                     </div>
+                    {/* Animated progress bar */}
                     <div className="w-full bg-secondary rounded-full h-2">
                       <div
                         className="bg-primary h-2 rounded-full transition-all duration-300"
@@ -104,6 +138,8 @@ export function PollView({ poll }: PollViewProps) {
                 )
               })}
             </div>
+            
+            {/* Thank you message */}
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground text-center">
                 Thank you for voting! Results are updated in real-time.
@@ -115,6 +151,7 @@ export function PollView({ poll }: PollViewProps) {
     );
   }
 
+  // Voting interface - shown before user votes
   return (
     <Card>
       <CardHeader>
@@ -128,6 +165,7 @@ export function PollView({ poll }: PollViewProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Poll metadata display */}
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
@@ -145,7 +183,9 @@ export function PollView({ poll }: PollViewProps) {
             )}
           </div>
           
+          {/* Conditional rendering based on poll voting type */}
           {poll.allowMultipleVotes ? (
+            // Multiple choice interface with checkboxes
             <div className="space-y-3">
               {poll.options.map((option) => (
                 <div key={option.id} className="flex items-center space-x-2">
@@ -161,6 +201,7 @@ export function PollView({ poll }: PollViewProps) {
               ))}
             </div>
           ) : (
+            // Single choice interface with radio buttons
             <RadioGroup value={selectedOptions[0]} onValueChange={handleOptionSelect}>
               {poll.options.map((option) => (
                 <div key={option.id} className="flex items-center space-x-2">
@@ -173,6 +214,7 @@ export function PollView({ poll }: PollViewProps) {
             </RadioGroup>
           )}
           
+          {/* Vote submission button */}
           <Button 
             onClick={handleVote} 
             disabled={selectedOptions.length === 0 || isLoading}

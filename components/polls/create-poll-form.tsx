@@ -1,5 +1,15 @@
 "use client"
 
+/**
+ * Poll Creation Form Component
+ * 
+ * Provides a comprehensive interface for creating new polls with:
+ * - Dynamic option management (add/remove options)
+ * - Poll settings (multiple votes, anonymous voting)
+ * - Form validation and submission
+ * - Category selection and optional end dates
+ */
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,34 +24,59 @@ import { createPoll } from "@/lib/polls/actions"
 // import { toast } from "sonner"
 
 export function CreatePollForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [options, setOptions] = useState(["", ""])
-  const [allowMultipleVotes, setAllowMultipleVotes] = useState(false)
-  const [anonymousVoting, setAnonymousVoting] = useState(false)
-  const [category, setCategory] = useState("")
+  // Form state management
+  const [isLoading, setIsLoading] = useState(false) // Loading state during form submission
+  const [options, setOptions] = useState(["", ""]) // Poll options (minimum 2 required)
+  const [allowMultipleVotes, setAllowMultipleVotes] = useState(false) // Allow users to select multiple options
+  const [anonymousVoting, setAnonymousVoting] = useState(false) // Hide voter identities
+  const [category, setCategory] = useState("") // Poll category selection
 
+  /**
+   * Adds a new empty option to the poll
+   * Users can add as many options as needed beyond the minimum of 2
+   */
   const addOption = () => {
     setOptions([...options, ""])
   }
 
+  /**
+   * Removes an option from the poll
+   * Prevents removal if only 2 options remain (minimum requirement)
+   * 
+   * @param index - Index of the option to remove
+   */
   const removeOption = (index: number) => {
     if (options.length > 2) {
       setOptions(options.filter((_, i) => i !== index))
     }
   }
 
+  /**
+   * Updates the text of a specific option
+   * 
+   * @param index - Index of the option to update
+   * @param value - New text value for the option
+   */
   const updateOption = (index: number, value: string) => {
     const newOptions = [...options]
     newOptions[index] = value
     setOptions(newOptions)
   }
 
+  /**
+   * Handles form submission to create a new poll
+   * 
+   * @param formData - Form data containing all poll information
+   * 
+   * On success, the server action handles redirect to polls page
+   * On error, displays error message and resets loading state
+   */
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true)
     
     try {
       await createPoll(formData)
-      // Success handled by Server Action redirect
+      // Success handled by Server Action redirect to polls page
     } catch (error) {
       console.error("Error creating poll:", error)
       alert(error instanceof Error ? error.message : "Failed to create poll")

@@ -1,3 +1,21 @@
+/**
+ * @deprecated This test file has been refactored and split into smaller, focused test files.
+ * 
+ * New test structure:
+ * - lib/polls/__tests__/createPoll.test.ts
+ * - lib/polls/__tests__/votePoll.test.ts  
+ * - lib/polls/__tests__/deletePoll.test.ts
+ * - lib/polls/__tests__/getPolls.test.ts
+ * - lib/polls/__tests__/getPoll.test.ts
+ * - lib/polls/__tests__/getUserPolls.test.ts
+ * - lib/polls/__tests__/integration.test.ts
+ * 
+ * Common utilities moved to: lib/__mocks__/test-utils.ts
+ * 
+ * This file is kept for reference but should not be used for new tests.
+ * Run: npm test lib/polls/__tests__ to execute the new test suite.
+ */
+
 import { createPoll, votePoll, deletePoll, getPolls, getPoll, getUserPolls } from '@/lib/polls/actions'
 
 // Mocks for Next.js utilities

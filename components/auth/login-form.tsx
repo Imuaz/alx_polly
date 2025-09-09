@@ -1,5 +1,16 @@
 "use client"
 
+/**
+ * Login Form Component
+ * 
+ * Provides user authentication interface with:
+ * - Email and password input fields with validation
+ * - Loading states and error handling
+ * - Email verification reminders
+ * - Responsive design with modern UI
+ * - Integration with Supabase authentication
+ */
+
 import * as React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -14,19 +25,32 @@ import { signInAction } from "@/lib/auth/actions"
 interface LoginFormProps extends React.ComponentProps<typeof Card> {}
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
+  // Loading state to prevent multiple submissions and show feedback
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
 
+  /**
+   * Handles form submission for user login
+   * 
+   * @param formData - Form data containing email and password
+   * 
+   * Features:
+   * - Calls server action for authentication
+   * - Provides specific error messages for common issues
+   * - Handles loading states and user feedback
+   * - Redirects on successful login (handled by server action)
+   */
   async function handleSubmit(formData: FormData) {
     setIsLoading(true)
     
     try {
       await signInAction(formData)
       toast.success("Signed in successfully")
+      // Redirect handled by server action
     } catch (error) {
       console.error("Sign in error:", error)
       const errorMessage = error instanceof Error ? error.message : "Failed to sign in"
       
-      // Handle specific error cases
+      // Provide user-friendly error messages for common scenarios
       if (errorMessage.includes('Email not confirmed')) {
         toast.error("Please verify your email address before signing in. Check your inbox for a verification link.")
       } else if (errorMessage.includes('Invalid login credentials')) {
