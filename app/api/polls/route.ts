@@ -15,8 +15,14 @@ export async function GET(request: Request) {
       sortOrder: searchParams.get("sortOrder") || "desc",
     }
 
-    const supabase = await createServerComponentClient()
-    
+    let supabase
+    try {
+      supabase = await createServerComponentClient()
+    } catch (err) {
+      console.error("Supabase client creation failed:", err)
+      return NextResponse.json({ error: "Supabase client creation failed. Check environment variables and network." }, { status: 500 })
+    }
+
     let query = supabase
       .from("polls")
       .select(`
@@ -47,7 +53,7 @@ export async function GET(request: Request) {
     // Apply sorting based on user preference
     const sortBy = filters?.sortBy || "created_at"
     const sortOrder = filters?.sortOrder || "desc"
-    
+
     if (sortBy === "votes") {
       query = query.order("total_votes", { ascending: sortOrder === "asc" })
     } else if (sortBy === "ending") {
@@ -56,10 +62,19 @@ export async function GET(request: Request) {
       query = query.order("created_at", { ascending: sortOrder === "asc" })
     }
 
-    const { data, error } = await query
+    let data, error
+    try {
+      const result = await query
+      data = result.data
+      error = result.error
+    } catch (err) {
+      console.error("Supabase fetch failed:", err)
+      return NextResponse.json({ error: "Supabase fetch failed. Check network or Supabase status." }, { status: 502 })
+    }
 
     if (error) {
-      throw new Error(`Failed to fetch polls: ${error.message}`)
+      console.error("Supabase returned error:", error)
+      return NextResponse.json({ error: `Failed to fetch polls: ${error.message}` }, { status: 500 })
     }
 
     // Transform database response to match Poll interface
