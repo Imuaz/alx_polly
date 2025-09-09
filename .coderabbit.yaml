@@ -1,0 +1,132 @@
+language: en
+
+reviews:
+  # Enable detailed reviews with context
+  profile: "chill" # Options: "chill", "assertive"
+
+  # Request changes workflow
+  request_changes_workflow: true
+
+  # Auto-reviews for pull requests
+  auto_review:
+    enabled: true
+    drafts: false
+
+  # Security scanning configuration
+  security_scanning:
+    enabled: true
+    scan_dependencies: true
+    scan_secrets: true
+    vulnerability_alerts: true
+    sast_enabled: true # Static Application Security Testing
+
+  # AI-powered suggestions
+  ai_suggestions:
+    enabled: true
+    features:
+      - code_optimization
+      - security_best_practices
+      - performance_improvements
+      - accessibility_enhancements
+      - test_coverage
+
+  # Path-based review settings
+  path_instructions:
+    # Next.js Components - Focus on performance and accessibility
+    - path: "app/**/*.tsx"
+      instructions: |
+        When reviewing Next.js components, pay special attention to:
+        - Component composition and hierarchy optimization
+        - Proper use of useState, useEffect, useContext, useCallback, useMemo
+        - Accessibility modifiers and ARIA attributes
+        - Performance implications of complex component hierarchies
+        - Proper use of Server and Client Components
+        - Memory management and cleanup in useEffect
+        - Dark mode and theme support
+        - Internationalization and localization
+        - Main thread UI updates optimization
+        - Component complexity (should not exceed 100-150 lines)
+        - XSS prevention in component rendering
+        - Content Security Policy compliance
+        - Event handler security best practices
+        - Secure prop validation and sanitization
+
+    # Server Actions - Focus on security and error handling
+    - path: "app/lib/actions/*.ts"
+      instructions: |
+        When reviewing Server Actions, check for:
+        - Input validation and sanitization
+        - Proper error handling and type safety
+        - Security vulnerabilities
+        - Database query optimization
+        - Rate limiting implementation
+        - Authentication and authorization checks
+        - Response data structure
+        - Cache invalidation strategy
+        - CSRF protection implementation
+        - SQL injection prevention
+        - Parameter pollution protection
+        - Session handling security
+        - Secure error messaging
+        - API endpoint hardening
+
+    # Database and API - Focus on data integrity
+    - path: "lib/supabase/*.ts"
+      instructions: |
+        When reviewing database and API code:
+        - Check for proper error handling
+        - Validate database queries
+        - Ensure type safety with database operations
+        - Verify authentication implementation
+        - Check for proper environment variable usage
+        - Review security measures
+        - Validate connection management
+        - Implement query parameterization
+        - Check for sensitive data exposure
+        - Verify access control patterns
+        - Review backup procedures
+        - Monitor query performance
+        - Validate data encryption
+
+    # Authentication and Authorization
+    - path: "app/(auth)/**/*.tsx"
+      instructions: |
+        When reviewing authentication code:
+        - Verify secure password handling
+        - Check for proper session management
+        - Check for secure cookie settings
+        - Verify HTTPS enforcement
+        - Review rate limiting on auth endpoints
+        - Check for secure password reset flow
+        - Validate JWT handling
+        - Monitor for brute force protection
+
+  # Severity levels for different types of issues
+  severity:
+    critical:
+      - security_vulnerabilities
+      - memory_leaks
+      - authentication_bypass
+      - data_exposure
+    high:
+      - performance_issues
+      - security_misconfiguration
+      - insecure_dependencies
+    medium:
+      - code_style_violations
+      - accessibility_issues
+      - type_safety_concerns
+    low:
+      - documentation_missing
+      - code_duplication
+      - naming_conventions
+
+  # AI-powered code metrics
+  code_metrics:
+    enabled: true
+    analyze:
+      - cyclomatic_complexity
+      - cognitive_complexity
+      - maintainability_index
+      - code_duplication
+      - test_coverage
