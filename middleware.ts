@@ -7,17 +7,17 @@ export async function middleware(request: NextRequest) {
   })
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.')
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY in your .env.local file.')
     // Return the response without authentication checks
     return supabaseResponse
   }
 
   const supabase = createServerClient(
     supabaseUrl,
-    supabaseAnonKey,
+    supabaseKey,
     {
       cookies: {
         getAll() {

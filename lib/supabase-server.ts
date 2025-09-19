@@ -1,72 +1,47 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getSupabaseConfig, assertSupabaseConfig } from './supabase-config'
+
+function getCookieHelpers(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+  return {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
+      },
+      setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        } catch {
+          // `setAll` may run in a Server Component where setting cookies
+          // is not allowed. This is safe to ignore if your middleware
+          // refreshes sessions (as in Next Auth examples).
+        }
+      },
+    },
+  }
+}
+
+// Using getSupabaseConfig and assertSupabaseConfig from lib/supabase-config
+// to ensure consistent behavior across client, server and middleware.
 
 export async function createServerComponentClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const { url, anon } = getSupabaseConfig()
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.')
-    throw new Error('Supabase environment variables are not configured')
-  }
+  assertSupabaseConfig(url, anon)
 
   const cookieStore = await cookies()
 
-  return createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  )
+  return createServerClient(url as string, anon as string, getCookieHelpers(cookieStore))
 }
 
 export async function createRouteHandlerClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const { url, anon } = getSupabaseConfig()
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.')
-    throw new Error('Supabase environment variables are not configured')
-  }
+  assertSupabaseConfig(url, anon)
 
   const cookieStore = await cookies()
 
-  return createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  )
+  return createServerClient(url as string, anon as string, getCookieHelpers(cookieStore))
 }
