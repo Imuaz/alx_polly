@@ -1,11 +1,12 @@
 import { Metadata } from "next"
 import { Suspense } from "react"
-import { DashboardHeader } from "@/components/layout/dashboard-header"
-import { DashboardShell } from "@/components/layout/dashboard-shell"
-import { PollsList } from "@/components/polls/polls-list"
-import { CreatePollButton } from "@/components/polls/create-poll-button"
-import { SuccessMessage } from "@/components/ui/success-message"
-import { getUserPolls } from "@/lib/polls/actions"
+import { DashboardHeader } from "@/components/layout/dashboard-header";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { CreatePollButton } from "@/components/polls/create-poll-button";
+import { SuccessMessage } from "@/components/ui/success-message";
+import { getUserPollsStatsServer } from "@/lib/data/polls-server";
+import { createServerComponentClient } from "@/lib/supabase-server";
+import { DashboardStatsSkeleton } from "@/components/ui/loading-states";
 
 export const metadata: Metadata = {
   title: "Dashboard | Polling App",
@@ -13,27 +14,33 @@ export const metadata: Metadata = {
 }
 
 export default async function DashboardPage() {
-  const polls = await getUserPolls()
+  const supabase = await createServerComponentClient();
+  const { data: { user } } = await supabase.auth.getUser();
   
-  // Calculate statistics
-  const totalPolls = polls.length
-  const totalVotes = polls.reduce((sum, poll) => sum + poll.totalVotes, 0)
-  const activePolls = polls.filter(poll => poll.status === 'active').length
-  const avgVotes = totalPolls > 0 ? Math.round(totalVotes / totalPolls) : 0
+  if (!user) {
+    return <div>Please log in to view your dashboard.</div>;
+  }
+
+  const stats = await getUserPollsStatsServer(user.id);
+  const totalPolls = stats?.totalPolls || 0;
+  const activePolls = stats?.activePolls || 0;
+  const totalVotes = stats?.totalVotes || 0;
+  const avgVotes = totalPolls > 0 ? Math.round(totalVotes / totalPolls) : 0;
 
   return (
-    <DashboardShell>
+    <DashboardShell
+      heading="Dashboard"
+      text="Welcome back! Here's an overview of your polls and activity."
+    >
       {/* Success Message */}
       <Suspense fallback={null}>
         <SuccessMessage />
       </Suspense>
       
-      <DashboardHeader
-        heading="Dashboard"
-        text="Welcome back! Here's an overview of your polls and activity."
-      >
+      <div className="flex justify-end">
         <CreatePollButton />
-      </DashboardHeader>
+      </div>
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Stats cards with real data */}
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
@@ -74,21 +81,6 @@ export default async function DashboardPage() {
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-4">
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold leading-none tracking-tight">
-                Recent Polls
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Your latest polls and their current status
-              </p>
-            </div>
-            <div className="p-6 pt-0">
-              <PollsList />
-            </div>
-          </div>
-        </div>
         <div className="col-span-3">
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div className="p-6">

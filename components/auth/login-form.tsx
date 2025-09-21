@@ -1,38 +1,48 @@
-"use client"
+"use client";
 
 /**
  * Login Form Component
- * 
+ *
  * Provides user authentication interface with:
  * - Email and password input fields with validation
  * - Loading states and error handling
  * - Email verification reminders
  * - Responsive design with modern UI
  * - Integration with Supabase authentication
+ * - Global loading system integration
  */
 
-import * as React from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/ui/icons"
-import { toast } from "sonner"
-import { AlertCircle, Mail, Lock, ArrowRight } from "lucide-react"
-import { signInAction } from "@/lib/auth/actions"
+import * as React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Icons } from "@/components/ui/icons";
+import { toast } from "sonner";
+import { AlertCircle, Mail, Lock, ArrowRight } from "lucide-react";
+import { signInAction } from "@/lib/auth/actions";
+import { useAuthLoading } from "@/components/providers/simple-loading-provider";
 
 interface LoginFormProps extends React.ComponentProps<typeof Card> {}
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
-  // Loading state to prevent multiple submissions and show feedback
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  // Use global auth loading system
+  const { showAuthLoading, hideAuthLoading } = useAuthLoading();
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   /**
    * Handles form submission for user login
-   * 
+   *
    * @param formData - Form data containing email and password
-   * 
+   *
    * Features:
    * - Calls server action for authentication
    * - Provides specific error messages for common issues
@@ -40,30 +50,39 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
    * - Redirects on successful login (handled by server action)
    */
   async function handleSubmit(formData: FormData) {
-    setIsLoading(true)
-    
+    setIsLoading(true);
+    showAuthLoading("signin");
+
     try {
-      await signInAction(formData)
-      toast.success("Signed in successfully")
+      await signInAction(formData);
+      toast.success("Signed in successfully");
       // Redirect handled by server action
     } catch (error) {
-      console.error("Sign in error:", error)
-      const errorMessage = error instanceof Error ? error.message : "Failed to sign in"
-      
+      console.error("Sign in error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to sign in";
+
       // Provide user-friendly error messages for common scenarios
-      if (errorMessage.includes('Email not confirmed')) {
-        toast.error("Please verify your email address before signing in. Check your inbox for a verification link.")
-      } else if (errorMessage.includes('Invalid login credentials')) {
-        toast.error("Invalid email or password. Please try again.")
+      if (errorMessage.includes("Email not confirmed")) {
+        toast.error(
+          "Please verify your email address before signing in. Check your inbox for a verification link.",
+        );
+      } else if (errorMessage.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password. Please try again.");
       } else {
-        toast.error(errorMessage)
+        toast.error(errorMessage);
       }
-      setIsLoading(false)
+    } finally {
+      setIsLoading(false);
+      hideAuthLoading();
     }
   }
 
   return (
-    <Card className={`shadow-xl border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 ${className}`} {...props}>
+    <Card
+      className={`shadow-xl border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 ${className}`}
+      {...props}
+    >
       <CardHeader className="space-y-3 pb-6">
         <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 mx-auto mb-2">
           <Icons.logo className="h-6 w-6 text-white" />
@@ -93,17 +112,17 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-medium">
               Password
             </Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                id="password" 
+              <Input
+                id="password"
                 name="password"
-                type="password" 
+                type="password"
                 placeholder="Enter your password"
                 className="pl-10 h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 required
@@ -111,15 +130,17 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
               />
             </div>
           </div>
-          
+
           {/* Email verification reminder */}
           <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
             <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-blue-700 dark:text-blue-300">
               <p className="font-medium mb-1">Email verification required</p>
-              <p className="mb-2">Make sure to verify your email address before signing in.</p>
-              <Link 
-                href="/verify-email" 
+              <p className="mb-2">
+                Make sure to verify your email address before signing in.
+              </p>
+              <Link
+                href="/verify-email"
                 className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
               >
                 Need to verify your email?
@@ -129,9 +150,9 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
           </div>
         </CardContent>
         <CardFooter className="pt-6">
-          <Button 
-            className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-medium" 
-            type="submit" 
+          <Button
+            className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+            type="submit"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -149,5 +170,5 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }
