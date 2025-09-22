@@ -8,14 +8,14 @@ This document outlines the planned features and their implementation details for
 
 ### 1. 🔒 User Role Management
 
-**Current Status**: Basic authentication without role management
+**Current Status**: COMPLETED ✅
 
 #### Implementation Plan
 
-- [ ] Add `role` column to `users` table in Supabase
-- [ ] Create Row Level Security (RLS) policies based on roles
-- [ ] Implement admin dashboard for role management
-- [ ] Modify existing components to respect role permissions
+- [x] Add `role` column to `profiles` table in Supabase (`migrations/0002_add_user_roles.sql`)
+- [x] Create Row Level Security (RLS) policies based on roles
+- [x] Implement admin dashboard for role management (User list, role editor, filters)
+- [x] Modify existing components to respect role permissions (admin link, route guards)
 
 #### Technical Requirements
 
@@ -26,7 +26,7 @@ This document outlines the planned features and their implementation details for
 
 ### 2. 📊 Poll Result Charts
 
-**Current Status**: Basic results display only
+**Current Status**: Pending (basic textual results only)
 
 #### Implementation Plan
 
@@ -47,7 +47,7 @@ This document outlines the planned features and their implementation details for
 
 ### 3. 💬 Comments/Discussion System
 
-**Current Status**: No existing comment functionality
+**Current Status**: Pending
 
 #### Implementation Plan
 
@@ -68,7 +68,7 @@ This document outlines the planned features and their implementation details for
 
 ### 4. 📱 Mobile Responsiveness & Accessibility
 
-**Current Status**: Basic Tailwind styling
+**Current Status**: In progress (responsive layout and shadcn/ui in place)
 
 #### Implementation Plan
 
@@ -92,7 +92,7 @@ This document outlines the planned features and their implementation details for
 
 ### 5. 📦 Email Notification System
 
-**Current Status**: No email functionality
+**Current Status**: Pending
 
 #### Implementation Plan
 
@@ -114,7 +114,7 @@ This document outlines the planned features and their implementation details for
 
 ### 6. 🧪 Testing Infrastructure
 
-**Current Status**: Basic Jest setup
+**Current Status**: Basic Jest setup (unit/integration tests to be expanded)
 
 #### Implementation Plan
 
@@ -136,7 +136,7 @@ This document outlines the planned features and their implementation details for
 
 ### 7. 🧠 AI-powered Reviews
 
-**Current Status**: No AI integration
+**Current Status**: Pending
 
 #### Implementation Plan
 
@@ -153,17 +153,17 @@ This document outlines the planned features and their implementation details for
 
 ### 8. 📷 QR Code Generation
 
-**Current Status**: No QR code functionality
+**Current Status**: COMPLETED ✅
 
 #### Implementation Plan
 
-- [ ] Add QR code library integration
-- [ ] Create QR code component
-- [ ] Implement sharing features:
+- [x] Add QR code library integration (`qrcode.react`)
+- [x] Create QR code component (`components/qr/QRCode.tsx`) with download support
+- [x] Implement sharing features:
   - Download QR code
   - Share directly
   - Custom styling options
-- [ ] Add QR code analytics
+- [x] Add QR code analytics (share events + stats via `poll_shares` + UI counters)
 
 #### Technical Requirements
 
@@ -172,16 +172,16 @@ This document outlines the planned features and their implementation details for
 - Download utilities
 - Analytics tracking
 
-## Priority Order
+## Priority Order (Updated)
 
-1. User Role Management (foundation for other features)
-2. QR Code Generation (enhance sharing capabilities)
-3. Poll Result Charts (improve data visualization)
-4. Mobile Responsiveness & Accessibility (improve user experience)
-5. Comments/Discussion System (enhance engagement)
-6. Email Notification System (increase user retention)
-7. Testing Infrastructure (ensure reliability)
-8. AI-powered Reviews (improve code quality)
+1. Poll Result Charts (improve data visualization)
+2. Mobile Responsiveness & Accessibility (improve user experience)
+3. Comments/Discussion System (enhance engagement)
+4. Email Notification System (increase user retention)
+5. Testing Infrastructure (ensure reliability)
+6. AI-powered Reviews (improve code quality)
+
+User Role Management and QR Code Generation are complete and now considered baseline.
 
 ## Notes
 
@@ -190,3 +190,6 @@ This document outlines the planned features and their implementation details for
 - Tests should be written alongside feature implementation
 - Documentation should be updated for each feature
 - Accessibility should be considered throughout implementation
+- Database migrations added:
+  - `0002_add_user_roles.sql` (roles + RLS)
+  - `0004_create_poll_shares.sql` (share analytics + RLS)

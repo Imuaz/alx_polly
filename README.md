@@ -96,6 +96,31 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the application.
 
+### Environment & Supabase Setup
+
+1. Create `.env.local` with:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SECRET_KEY=your_supabase_secret_key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+
+# Site Configuration
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+2. Apply database migrations in Supabase SQL Editor (or CLI):
+
+- `migrations/0002_add_user_roles.sql` (roles + RLS)
+- `migrations/0003_add_email_to_profiles.sql` (email on profiles)
+- `migrations/0004_create_poll_shares.sql` (share analytics + RLS)
+
+3. Configure Auth (Email/Password enabled) and set Redirect URL to `${NEXT_PUBLIC_SITE_URL}/auth/callback`.
+
+4. Optional: seed admin role using Supabase SQL (set `profiles.role = 'admin'`).
+
 ### Production Build
 
 ```bash
@@ -135,7 +160,7 @@ npm start
    - Copy the direct link
    - Share on social media (Twitter, Facebook, LinkedIn)
    - Generate QR code for mobile sharing
-3. **Track Engagement**: Monitor vote counts and sharing statistics
+3. **Track Engagement**: Monitor vote counts and sharing statistics (Shares today, Total shares)
 
 ### Managing Your Polls
 
@@ -198,6 +223,16 @@ alx-polly/
 - **Error Handling**: User-friendly error messages and fallbacks
 - **Accessibility**: WCAG compliant with proper ARIA labels
 
+## 🤖 AI Usage (Tools and Context)
+
+- Development assistance leveraged AI for code generation and refactoring with context on:
+  - Next.js App Router best practices (Server Components, Server Actions)
+  - Supabase SSR client usage and RLS-safe queries
+  - Error handling and redirect patterns (handling `NEXT_REDIRECT` digest)
+  - QR code integration (`qrcode.react`) and analytics design
+- Tools used in-editor: code search, lints, and automated edits; no secrets were hardcoded.
+- All database keys are loaded via environment variables.
+
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
@@ -205,6 +240,14 @@ alx-polly/
 1. Connect your repository to [Vercel](https://vercel.com)
 2. Set environment variables in Vercel dashboard
 3. Deploy automatically on every push to main branch
+
+### Production Readiness Notes
+
+- Environment variables set in hosting provider (same as `.env.local`).
+- Ensure middleware allows public access to `/polls` and `/auth/callback` for QR usage.
+- Confirm DB migrations applied and RLS policies enabled.
+- Confirm `poll_shares` table exists and policies applied for anonymous inserts/selects.
+- Set `NEXT_PUBLIC_SITE_URL` to production domain for correct email redirects and QR URLs.
 
 ### Other Platforms
 
