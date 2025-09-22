@@ -58,6 +58,18 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       toast.success("Signed in successfully");
       // Redirect handled by server action
     } catch (error) {
+      // Allow Next.js redirect errors to bubble so navigation proceeds
+      if (
+        error &&
+        typeof error === "object" &&
+        // @ts-ignore - digest exists on Next.js redirect errors
+        typeof (error as any).digest === "string" &&
+        // @ts-ignore
+        (error as any).digest.startsWith("NEXT_REDIRECT")
+      ) {
+        throw error;
+      }
+
       console.error("Sign in error:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to sign in";

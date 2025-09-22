@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   
+  serverExternalPackages: ['@supabase/supabase-js'],
+  
   // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],

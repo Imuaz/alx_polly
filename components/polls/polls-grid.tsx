@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, Users, Clock } from "lucide-react"
-import { getPolls } from "@/lib/polls/actions"
+import { getPollsOptimized } from "@/lib/data/optimized-polls-server"
 import { PollFilters } from "@/lib/types/poll"
 
 interface PollsGridProps {
@@ -11,9 +11,9 @@ interface PollsGridProps {
 }
 
 export async function PollsGrid({ filters }: PollsGridProps) {
-  const polls = await getPolls(filters)
+  const polls = await getPollsOptimized(filters).catch(() => []);
 
-  if (polls.length === 0) {
+  if (!Array.isArray(polls) || polls.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-muted-foreground">
@@ -52,12 +52,12 @@ export async function PollsGrid({ filters }: PollsGridProps) {
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
                   <Users className="h-4 w-4" />
-                  <span>{poll.totalVotes} votes</span>
+                  <span>{poll.total_votes} votes</span>
                 </div>
-                {poll.endsAt && (
+                {poll.expires_at && (
                   <div className="flex items-center space-x-1">
                     <Clock className="h-4 w-4" />
-                    <span>Ends {new Date(poll.endsAt).toLocaleDateString()}</span>
+                    <span>Ends {new Date(poll.expires_at).toLocaleDateString()}</span>
                   </div>
                 )}
               </div>

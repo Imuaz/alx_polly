@@ -10,8 +10,7 @@ import { DashboardContainer } from "@/components/layout/dashboard-shell";
 import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { PollCardSkeleton } from "@/components/ui/loading-states";
 import { BarChart3, TrendingUp, Users, Filter } from "lucide-react";
-import { getPollsServer } from "@/lib/data/polls-server";
-import { createServerComponentClient } from "@/lib/supabase-server";
+import { getPollsOptimized } from "@/lib/data/optimized-polls-server";
 
 export const metadata: Metadata = {
   title: "Polls",
@@ -19,13 +18,13 @@ export const metadata: Metadata = {
 };
 
 export default async function PollsPage() {
-  // Fetch polls data server-side for better performance
-  const polls = await getPollsServer();
+  // Fetch polls data server-side with caching
+  const polls = await getPollsOptimized().catch(() => []);
   
   // Calculate stats from real data
-  const totalPolls = polls.length;
-  const activePolls = polls.filter(poll => poll.status === 'active').length;
-  const totalVotes = polls.reduce((sum, poll) => sum + poll.totalVotes, 0);
+  const totalPolls = Array.isArray(polls) ? polls.length : 0;
+  const activePolls = Array.isArray(polls) ? polls.filter(poll => poll.status === 'active').length : 0;
+  const totalVotes = Array.isArray(polls) ? polls.reduce((sum, poll) => sum + poll.total_votes, 0) : 0;
 
   return (
     <ProtectedRoute>

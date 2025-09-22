@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPollsServer } from '@/lib/data/polls-server';
+import { getPollsOptimized } from '@/lib/data/optimized-polls-server';
 import { PollFilters } from '@/lib/types/poll';
 
 export async function GET(request: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       sortOrder: (sortOrder === 'asc' || sortOrder === 'desc') ? sortOrder as 'asc' | 'desc' : undefined,
     };
 
-    const polls = await getPollsServer(filters);
+    const polls = await getPollsOptimized(filters);
     
     return NextResponse.json(polls, {
       headers: {
