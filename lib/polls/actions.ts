@@ -343,71 +343,7 @@ export async function getPoll(id: string): Promise<Poll | null> {
   }
 }
 
-/**
- * Fetches all polls created by the current user
- * 
- * @returns {Promise<Poll[]>} Array of polls created by the authenticated user
- * 
- * Features:
- * - Only returns polls created by the current user
- * - Ordered by creation date (newest first)
- * - Includes all poll options and vote counts
- * - Returns empty array if user is not authenticated
- */
-export async function getUserPolls() {
-  try {
-    const supabase = await createServerComponentClient()
-    
-    // Get current user to filter their polls
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return [] // Return empty array if not authenticated
-    }
 
-    // Fetch polls created by the current user
-    const { data, error } = await supabase
-      .from("polls")
-      .select(`
-        *,
-        poll_options (
-          id,
-          text,
-          votes,
-          order_index
-        )
-      `)
-      .eq("created_by", user.id)
-      .order("created_at", { ascending: false }) // Newest first
-
-    if (error) {
-      throw new Error(`Failed to fetch user polls: ${error.message}`)
-    }
-
-    // Transform database response to match Poll interface
-    return data?.map((poll: any) => ({
-      id: poll.id,
-      title: poll.title,
-      description: poll.description,
-      category: poll.category,
-      status: poll.status,
-      createdAt: poll.created_at,
-      endsAt: poll.ends_at,
-      totalVotes: poll.total_votes,
-      allowMultipleVotes: poll.allow_multiple_votes,
-      anonymousVoting: poll.anonymous_voting,
-      createdBy: poll.created_by,
-      options: poll.poll_options?.map((option: any) => ({
-        id: option.id,
-        text: option.text,
-        votes: option.votes,
-        orderIndex: option.order_index
-      })) || []
-    })) || []
-  } catch (error) {
-    console.error("Error fetching user polls:", error)
-    return [] // Return empty array on error for better UX
-  }
-}
 
 /**
  * Deletes a poll and all associated data
@@ -425,6 +361,51 @@ export async function getUserPolls() {
  * 2. Delete poll record (cascades to options and votes)
  * 3. Clear relevant caches and redirect with success message
  */
+/**
+ * Fetches statistics for the current user's polls
+ * 
+ * @returns {Promise<{totalPolls: number, activePolls: number, totalVotes: number}>} 
+ *          An object containing the user's poll statistics
+ */
+export async function getUserPollsStats() {
+  try {
+    const supabase = await createServerComponentClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { totalPolls: 0, activePolls: 0, totalVotes: 0 };
+    }
+
+    const { data, error } = await supabase
+      .from('polls')
+      .select('id, status, total_votes')
+      .eq('created_by', user.id);
+
+    if (error) {
+      throw new Error(`Failed to fetch user polls stats: ${error.message}`);
+    }
+
+    const now = new Date().toISOString();
+
+    const stats = data.reduce(
+      (acc, poll) => {
+        acc.totalPolls += 1;
+        if (poll.status === 'active') {
+          acc.activePolls += 1;
+        }
+        acc.totalVotes += poll.total_votes;
+        return acc;
+      },
+      { totalPolls: 0, activePolls: 0, totalVotes: 0 }
+    );
+
+    return stats;
+  } catch (error) {
+    console.error("Error fetching user polls stats:", error);
+    return { totalPolls: 0, activePolls: 0, totalVotes: 0 };
+  }
+}
+
 export async function deletePoll(pollId: string) {
   try {
     const supabase = await createServerComponentClient()

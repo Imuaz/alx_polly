@@ -3,11 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, Users, Calendar, Edit, Trash2 } from "lucide-react"
-import { getUserPolls } from "@/lib/polls/actions"
+import { getPolls } from "@/lib/polls/actions"
 import { DeletePollButton } from "@/components/polls/delete-poll-button"
 
 export async function PollsList() {
-  const polls = await getUserPolls()
+  const polls = await getPolls()
 
   if (polls.length === 0) {
     return (
