@@ -6,6 +6,21 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
+  // Public routes that should not require auth or trigger network calls in middleware
+  const pathname = request.nextUrl.pathname
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/verify-email' ||
+    pathname.startsWith('/auth/callback') ||
+    // Allow viewing polls (including nested routes like /polls/[id]) without auth for QR access
+    pathname.startsWith('/polls')
+
+  if (isPublicRoute) {
+    return supabaseResponse
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
 
@@ -43,10 +58,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  // Define public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/verify-email']
-  const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname)
 
   // If user is not signed in and the current path is not a public route,
   // redirect the user to /login

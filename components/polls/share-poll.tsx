@@ -1,27 +1,39 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Share2, Copy, Check, Twitter, Facebook, Linkedin } from "lucide-react"
-import { Poll } from "@/lib/types/poll"
+import { Poll, ShareStats } from "@/lib/types/poll"
+import { recordPollShare } from "@/lib/polls/actions"
 import { QRCode } from "@/components/qr/QRCode"
 
 interface SharePollProps {
   poll: Poll
+  initialShareStats?: ShareStats
 }
 
-export function SharePoll({ poll }: SharePollProps) {
+export function SharePoll({ poll, initialShareStats }: SharePollProps) {
   const [copied, setCopied] = useState(false)
-  const pollUrl = `${window.location.origin}/polls/${poll.id}`
+  const [pollUrl, setPollUrl] = useState("")
+  const [shareStats, setShareStats] = useState<ShareStats>({ total: initialShareStats?.total ?? 0, today: initialShareStats?.today ?? 0 })
+
+  useEffect(() => {
+    // Compute on client to avoid SSR window reference
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    setPollUrl(`${origin}/polls/${poll.id}`)
+  }, [poll.id])
 
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(pollUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+      // Record share event for copy action
+      recordPollShare(poll.id, 'copy')
+      setShareStats((s) => ({ total: s.total + 1, today: s.today + 1 }))
     } catch (err) {
       console.error('Failed to copy link:', err)
     }
@@ -45,6 +57,9 @@ export function SharePoll({ poll }: SharePollProps) {
     
     if (url) {
       window.open(url, '_blank', 'width=600,height=400')
+      // Fire and forget record
+      recordPollShare(poll.id, platform)
+      setShareStats((s) => ({ total: s.total + 1, today: s.today + 1 }))
     }
   }
 
@@ -127,11 +142,11 @@ export function SharePoll({ poll }: SharePollProps) {
         <div className="pt-4 border-t">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Shares today</span>
-            <Badge variant="secondary">12</Badge>
+            <Badge variant="secondary">{shareStats.today}</Badge>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
             <span className="text-muted-foreground">Total shares</span>
-            <Badge variant="secondary">156</Badge>
+            <Badge variant="secondary">{shareStats.total}</Badge>
           </div>
         </div>
       </CardContent>
