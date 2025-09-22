@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Share2, Copy, Check, Twitter, Facebook, Linkedin } from "lucide-react"
 import { Poll } from "@/lib/types/poll"
+import { QRCode } from "@/components/qr/QRCode"
 
 interface SharePollProps {
   poll: Poll
@@ -116,17 +117,10 @@ export function SharePoll({ poll }: SharePollProps) {
           </div>
         </div>
 
-        {/* QR Code Placeholder */}
+        {/* QR Code */}
         <div className="space-y-2">
           <label className="text-sm font-medium">QR Code</label>
-          <div className="p-4 border-2 border-dashed border-muted-foreground/25 rounded-lg text-center">
-            <p className="text-sm text-muted-foreground">
-              QR Code will be generated here
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Scan to share on mobile devices
-            </p>
-          </div>
+          <QRCode value={pollUrl} className="p-2" fileName={`poll-${poll.id}-qr.png`} />
         </div>
 
         {/* Share Stats */}
