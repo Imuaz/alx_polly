@@ -14,13 +14,15 @@ create index if not exists idx_poll_shares_created_at on public.poll_shares(crea
 alter table public.poll_shares enable row level security;
 
 -- Allow anyone to insert share events (including anonymous users)
-create policy if not exists "Allow public insert shares"
+drop policy if exists "Allow public insert shares" on public.poll_shares;
+create policy "Allow public insert shares"
 on public.poll_shares for insert
 to anon, authenticated
 with check (true);
 
 -- Allow anyone to select share stats
-create policy if not exists "Allow public read shares"
+drop policy if exists "Allow public read shares" on public.poll_shares;
+create policy "Allow public read shares"
 on public.poll_shares for select
 to anon, authenticated
 using (true);
