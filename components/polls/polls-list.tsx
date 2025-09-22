@@ -9,6 +9,13 @@ import { DeletePollButton } from "@/components/polls/delete-poll-button"
 export async function PollsList() {
   const polls = await getPolls()
 
+  async function deleteAction(formData: FormData) {
+    "use server"
+    const pollId = String(formData.get("pollId"))
+    const { deletePoll } = await import("@/lib/polls/actions")
+    await deletePoll(pollId)
+  }
+
   if (polls.length === 0) {
     return (
       <div className="text-center py-8">
@@ -69,7 +76,7 @@ export async function PollsList() {
                     Edit
                   </Link>
                 </Button>
-                <DeletePollButton pollId={poll.id} />
+                <DeletePollButton pollId={poll.id} action={deleteAction} />
               </div>
             </div>
           </CardContent>

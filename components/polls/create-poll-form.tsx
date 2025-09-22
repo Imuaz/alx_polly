@@ -20,10 +20,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Icons } from "@/components/ui/icons"
 import { Plus, X } from "lucide-react"
-import { createPoll } from "@/lib/polls/actions"
+// Server action will be passed in from the server page
 // import { toast } from "sonner"
 
-export function CreatePollForm() {
+interface CreatePollFormProps {
+  onSubmitAction: (formData: FormData) => Promise<void>
+}
+
+export function CreatePollForm({ onSubmitAction }: CreatePollFormProps) {
   // Form state management
   const [isLoading, setIsLoading] = useState(false) // Loading state during form submission
   const [options, setOptions] = useState(["", ""]) // Poll options (minimum 2 required)
@@ -75,7 +79,7 @@ export function CreatePollForm() {
     setIsLoading(true)
     
     try {
-      await createPoll(formData)
+      await onSubmitAction(formData)
       // Success handled by Server Action redirect to polls page
     } catch (error) {
       console.error("Error creating poll:", error)

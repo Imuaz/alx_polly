@@ -448,44 +448,7 @@ export async function getUserPolls() {
  * @returns {Promise<{totalPolls: number, activePolls: number, totalVotes: number}>} 
  *          An object containing the user's poll statistics
  */
-export async function getUserPollsStats() {
-  try {
-    const supabase = await createServerComponentClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { totalPolls: 0, activePolls: 0, totalVotes: 0 };
-    }
-
-    const { data, error } = await supabase
-      .from('polls')
-      .select('id, status, total_votes')
-      .eq('created_by', user.id);
-
-    if (error) {
-      throw new Error(`Failed to fetch user polls stats: ${error.message}`);
-    }
-
-    const now = new Date().toISOString();
-
-    const stats = data.reduce(
-      (acc, poll) => {
-        acc.totalPolls += 1;
-        if (poll.status === 'active') {
-          acc.activePolls += 1;
-        }
-        acc.totalVotes += poll.total_votes;
-        return acc;
-      },
-      { totalPolls: 0, activePolls: 0, totalVotes: 0 }
-    );
-
-    return stats;
-  } catch (error) {
-    console.error("Error fetching user polls stats:", error);
-    return { totalPolls: 0, activePolls: 0, totalVotes: 0 };
-  }
-}
+// NOTE: getUserPollsStats removed to avoid bundling issues; reintroduce in a server-only module if needed.
 
 export async function deletePoll(pollId: string) {
   try {

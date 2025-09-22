@@ -3,7 +3,8 @@ import { notFound } from "next/navigation"
 import { PollView } from "@/components/polls/poll-view"
 import { PollResults } from "@/components/polls/poll-results"
 import { SharePoll } from "@/components/polls/share-poll"
-import { getPoll, getPollShareStats, votePoll, recordPollShare } from "@/lib/polls/actions"
+import { getPoll, getPollShareStats } from "@/lib/polls/queries"
+import { createServerComponentClient } from "@/lib/supabase-server"
 
 interface PollPageProps {
   params: Promise<{
@@ -39,13 +40,42 @@ export default async function PollPage({ params }: PollPageProps) {
 
   async function submitVote(formData: FormData) {
     "use server"
+    const supabase = await createServerComponentClient()
     const optionIds = formData.getAll("option").map(String)
-    await votePoll(id, optionIds)
+
+    // Auth check
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      throw new Error("Authentication required")
+    }
+
+    // Validate poll
+    const { data: poll } = await supabase
+      .from("polls")
+      .select("allow_multiple_votes, status")
+      .eq("id", id)
+      .single()
+
+    if (!poll) throw new Error("Poll not found")
+    if (poll.status !== "active") throw new Error("This poll is no longer active")
+    if (!poll.allow_multiple_votes && optionIds.length > 1) {
+      throw new Error("Only one option can be selected for this poll")
+    }
+
+    const voteInserts = optionIds.map(optionId => ({
+      poll_id: id,
+      user_id: user.id,
+      option_id: optionId
+    }))
+
+    const { error: voteError } = await supabase.from("poll_votes").insert(voteInserts)
+    if (voteError) throw new Error(`Failed to record vote: ${voteError.message}`)
   }
 
   async function recordShare(platform?: string) {
     "use server"
-    await recordPollShare(id, platform)
+    const supabase = await createServerComponentClient()
+    await supabase.from("poll_shares").insert({ poll_id: id, platform: platform || null })
   }
 
   return (

@@ -80,12 +80,11 @@ export async function getPollsOptimized(filters?: {
         description,
         status,
         created_at,
-        expires_at,
+        ends_at,
         category,
-        user_id,
-        profiles!polls_user_id_fkey(full_name),
-        poll_options(id, text, vote_count),
-        poll_votes(count)
+        created_by,
+        total_votes,
+        poll_options(id, text, votes, order_index)
       `)
       .order('created_at', { ascending: false });
 
@@ -116,21 +115,21 @@ export async function getPollsOptimized(filters?: {
     }
 
     // Transform data for better performance
-    const transformedPolls = polls?.map(poll => ({
+    const transformedPolls = polls?.map((poll: any) => ({
       id: poll.id,
       title: poll.title,
       description: poll.description,
       status: poll.status,
       created_at: poll.created_at,
-      expires_at: poll.expires_at,
+      ends_at: poll.ends_at,
       category: poll.category,
-      user_id: poll.user_id,
-      author: (poll.profiles as any)?.full_name || 'Unknown',
-      total_votes: poll.poll_votes?.[0]?.count || 0,
-      options: poll.poll_options?.map(option => ({
+      created_by: poll.created_by,
+      total_votes: poll.total_votes || 0,
+      options: poll.poll_options?.map((option: any) => ({
         id: option.id,
         text: option.text,
-        vote_count: option.vote_count
+        votes: option.votes,
+        order_index: option.order_index
       })) || []
     })) || [];
 
@@ -166,12 +165,11 @@ export async function getPollOptimized(pollId: string) {
         description,
         status,
         created_at,
-        expires_at,
+        ends_at,
         category,
-        user_id,
-        profiles!polls_user_id_fkey(full_name),
-        poll_options(id, text, vote_count),
-        poll_votes(count)
+        created_by,
+        total_votes,
+        poll_options(id, text, votes, order_index)
       `)
       .eq('id', pollId)
       .single();
@@ -186,15 +184,15 @@ export async function getPollOptimized(pollId: string) {
       description: poll.description,
       status: poll.status,
       created_at: poll.created_at,
-      expires_at: poll.expires_at,
+      ends_at: poll.ends_at,
       category: poll.category,
-      user_id: poll.user_id,
-      author: (poll.profiles as any)?.full_name || 'Unknown',
-      total_votes: poll.poll_votes?.[0]?.count || 0,
-      options: poll.poll_options?.map(option => ({
+      created_by: poll.created_by,
+      total_votes: poll.total_votes || 0,
+      options: poll.poll_options?.map((option: any) => ({
         id: option.id,
         text: option.text,
-        vote_count: option.vote_count
+        votes: option.votes,
+        order_index: option.order_index
       })) || []
     };
 

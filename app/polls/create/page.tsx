@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { CreatePollForm } from "@/components/polls/create-poll-form"
+import { createPoll } from "@/lib/polls/actions"
 
 export const metadata: Metadata = {
   title: "Create Poll | Polling App",
@@ -7,6 +8,10 @@ export const metadata: Metadata = {
 }
 
 export default function CreatePollPage() {
+  async function onSubmitAction(formData: FormData) {
+    "use server"
+    await createPoll(formData)
+  }
   return (
     <div className="container mx-auto py-6 max-w-2xl">
       <div className="space-y-6">
@@ -17,7 +22,7 @@ export default function CreatePollPage() {
           </p>
         </div>
         
-        <CreatePollForm />
+        <CreatePollForm onSubmitAction={onSubmitAction} />
       </div>
     </div>
   )
