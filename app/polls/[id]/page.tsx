@@ -5,6 +5,7 @@ import { PollResults } from "@/components/polls/poll-results"
 import { SharePoll } from "@/components/polls/share-poll"
 import { getPoll, getPollShareStats } from "@/lib/polls/queries"
 import { createServerComponentClient } from "@/lib/supabase-server"
+import { PollChat } from "@/components/polls/poll-chat"
 
 interface PollPageProps {
   params: Promise<{
@@ -82,10 +83,20 @@ export default async function PollPage({ params }: PollPageProps) {
     <div className="container mx-auto py-6 max-w-4xl">
       <div className="space-y-6">
         <PollView poll={poll} submitVote={submitVote} />
-        
-        <div className="grid gap-6 md:grid-cols-2">
-          <PollResults poll={poll} />
-          <SharePoll poll={poll} initialShareStats={shareStats} recordShare={recordShare} />
+
+        {/* Results + Share: responsive two-column grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col">
+            <PollResults poll={poll} />
+          </div>
+          <div className="flex flex-col">
+            <SharePoll poll={poll} initialShareStats={shareStats} recordShare={recordShare} />
+          </div>
+        </div>
+
+        {/* Chat section separated below; scrollable content won't push layout */}
+        <div className="w-full">
+          <PollChat pollId={id} />
         </div>
       </div>
     </div>

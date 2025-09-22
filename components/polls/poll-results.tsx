@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Users, TrendingUp, Clock } from "lucide-react"
 import { Poll } from "@/lib/types/poll"
+import { PollChart } from "@/components/polls/PollChart"
 
 interface PollResultsProps {
   poll: Poll
@@ -13,6 +14,7 @@ export function PollResults({ poll }: PollResultsProps) {
   )
   
   const winningPercentage = poll.totalVotes > 0 ? (winningOption.votes / poll.totalVotes) * 100 : 0
+  const chartData = poll.options.map(o => ({ name: o.text, value: o.votes }))
 
   return (
     <Card>
@@ -40,6 +42,13 @@ export function PollResults({ poll }: PollResultsProps) {
           <p className="text-sm text-muted-foreground">
             {winningOption.votes} votes
           </p>
+        </div>
+
+        {/* Chart Visualization */}
+        <div className="space-y-3">
+          <h4 className="font-medium">Visualization</h4>
+          <PollChart data={chartData} type="pie" />
+          <PollChart data={chartData} type="bar" />
         </div>
 
         {/* Results Breakdown */}
