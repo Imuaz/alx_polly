@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { PollView } from "@/components/polls/poll-view"
 import { PollResults } from "@/components/polls/poll-results"
 import { SharePoll } from "@/components/polls/share-poll"
-import { getPoll, getPollShareStats } from "@/lib/polls/actions"
+import { getPoll, getPollShareStats, votePoll, recordPollShare } from "@/lib/polls/actions"
 
 interface PollPageProps {
   params: Promise<{
@@ -37,14 +37,25 @@ export default async function PollPage({ params }: PollPageProps) {
     notFound()
   }
 
+  async function submitVote(formData: FormData) {
+    "use server"
+    const optionIds = formData.getAll("option").map(String)
+    await votePoll(id, optionIds)
+  }
+
+  async function recordShare(platform?: string) {
+    "use server"
+    await recordPollShare(id, platform)
+  }
+
   return (
     <div className="container mx-auto py-6 max-w-4xl">
       <div className="space-y-6">
-        <PollView poll={poll} />
+        <PollView poll={poll} submitVote={submitVote} />
         
         <div className="grid gap-6 md:grid-cols-2">
           <PollResults poll={poll} />
-          <SharePoll poll={poll} initialShareStats={shareStats} />
+          <SharePoll poll={poll} initialShareStats={shareStats} recordShare={recordShare} />
         </div>
       </div>
     </div>

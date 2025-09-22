@@ -20,14 +20,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Icons } from "@/components/ui/icons"
 import { Users, Calendar, Clock } from "lucide-react"
 import { Poll } from "@/lib/types/poll"
-import { votePoll } from "@/lib/polls/actions"
 import { toast } from "sonner"
 
 interface PollViewProps {
   poll: Poll;
+  submitVote: (formData: FormData) => Promise<void>;
 }
 
-export function PollView({ poll }: PollViewProps) {
+export function PollView({ poll, submitVote }: PollViewProps) {
   // State management for voting interface
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]); // Track selected option IDs
   const [hasVoted, setHasVoted] = useState(false); // Toggle between voting and results view
@@ -41,23 +41,21 @@ export function PollView({ poll }: PollViewProps) {
    */
   const handleVote = async () => {
     if (selectedOptions.length === 0) return
-
-    setIsLoading(true);
-
+    setIsLoading(true)
     try {
-      // Submit votes using server action
-      await votePoll(poll.id, selectedOptions)
-      setHasVoted(true) // Switch to results view
+      const formData = new FormData()
+      selectedOptions.forEach((id) => formData.append("option", id))
+      await submitVote(formData)
+      setHasVoted(true)
       toast.success("Vote submitted successfully!")
     } catch (error) {
-      console.error("Voting error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to submit vote";
-      toast.error(errorMessage);
+      console.error("Voting error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit vote"
+      toast.error(errorMessage)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   /**
    * Handles option selection based on poll voting rules

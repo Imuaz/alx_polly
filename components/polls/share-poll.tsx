@@ -7,15 +7,15 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Share2, Copy, Check, Twitter, Facebook, Linkedin } from "lucide-react"
 import { Poll, ShareStats } from "@/lib/types/poll"
-import { recordPollShare } from "@/lib/polls/actions"
 import { QRCode } from "@/components/qr/QRCode"
 
 interface SharePollProps {
   poll: Poll
   initialShareStats?: ShareStats
+  recordShare?: (platform?: string) => Promise<void>
 }
 
-export function SharePoll({ poll, initialShareStats }: SharePollProps) {
+export function SharePoll({ poll, initialShareStats, recordShare }: SharePollProps) {
   const [copied, setCopied] = useState(false)
   const [pollUrl, setPollUrl] = useState("")
   const [shareStats, setShareStats] = useState<ShareStats>({ total: initialShareStats?.total ?? 0, today: initialShareStats?.today ?? 0 })
@@ -32,7 +32,7 @@ export function SharePoll({ poll, initialShareStats }: SharePollProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
       // Record share event for copy action
-      recordPollShare(poll.id, 'copy')
+      recordShare?.('copy')
       setShareStats((s) => ({ total: s.total + 1, today: s.today + 1 }))
     } catch (err) {
       console.error('Failed to copy link:', err)
@@ -58,7 +58,7 @@ export function SharePoll({ poll, initialShareStats }: SharePollProps) {
     if (url) {
       window.open(url, '_blank', 'width=600,height=400')
       // Fire and forget record
-      recordPollShare(poll.id, platform)
+      recordShare?.(platform)
       setShareStats((s) => ({ total: s.total + 1, today: s.today + 1 }))
     }
   }

@@ -191,6 +191,15 @@ export async function votePoll(pollId: string, optionIds: string[]) {
 }
 
 /**
+ * Server Action: Handles vote submission from a form
+ * Expects multiple inputs named "option" containing option IDs
+ */
+export async function votePollAction(pollId: string, formData: FormData) {
+  const optionIds = formData.getAll("option").map(String)
+  return votePoll(pollId, optionIds)
+}
+
+/**
  * Fetches polls with optional filtering and sorting
  * 
  * @param filters - Optional filters for category, status, search, and sorting
