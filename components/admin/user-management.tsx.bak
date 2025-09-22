@@ -1,0 +1,100 @@
+import React, { JSX } from 'react';
+import { UserRole } from '@/lib/types/roles';
+import { getUsersWithRoles, updateUserRole } from '@/lib/auth/role-actions';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
+export function UserManagement(): JSX.Element {
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    loadUsers();
+  }, []);
+
+  async function loadUsers() {
+    try {
+      setIsLoading(true);
+      const users = await getUsersWithRoles();
+      setUsers(users);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    try {
+      setIsLoading(true);
+      await updateUserRole(userId, newRole);
+      await loadUsers(); // Reload users to get updated data
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user role');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+      {isLoading && (
+        <div className="flex justify-center items-center p-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      )}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>
+                <Select
+                  value={user.role}
+                  onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue>{user.role}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="moderator">Moderator</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+              <TableCell>
+                {/* Add additional actions here */}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

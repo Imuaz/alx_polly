@@ -343,6 +343,57 @@ export async function getPoll(id: string): Promise<Poll | null> {
   }
 }
 
+// --- QR Share Analytics ---
+/**
+ * Records a share event for analytics
+ */
+export async function recordPollShare(pollId: string, platform?: string) {
+  try {
+    const supabase = await createServerComponentClient()
+
+    const { error } = await supabase.from("poll_shares").insert({
+      poll_id: pollId,
+      platform: platform || null,
+    })
+
+    if (error) {
+      throw new Error(`Failed to record share: ${error.message}`)
+    }
+
+    revalidatePath(`/polls/${pollId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Error recording poll share:", error)
+    return { success: false }
+  }
+}
+
+/**
+ * Fetches share stats for a poll (total and today)
+ */
+export async function getPollShareStats(pollId: string): Promise<ShareStats> {
+  try {
+    const supabase = await createServerComponentClient()
+
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+
+    const [{ count: total }, { count: today }] = await Promise.all([
+      supabase.from("poll_shares").select("id", { count: "exact", head: true }).eq("poll_id", pollId),
+      supabase
+        .from("poll_shares")
+        .select("id", { count: "exact", head: true })
+        .eq("poll_id", pollId)
+        .gte("created_at", startOfToday.toISOString()),
+    ])
+
+    return { total: total || 0, today: today || 0 }
+  } catch (error) {
+    console.error("Error fetching poll share stats:", error)
+    return { total: 0, today: 0 }
+  }
+}
+
 /**
  * Records a share event for analytics
  */
@@ -414,50 +465,7 @@ export async function getUserPolls() {
       return [] // Return empty array if not authenticated
     }
 
-    // Fetch polls created by the current user
-    const { data, error } = await supabase
-      .from("polls")
-      .select(`
-        *,
-        poll_options (
-          id,
-          text,
-          votes,
-          order_index
-        )
-      `)
-      .eq("created_by", user.id)
-      .order("created_at", { ascending: false }) // Newest first
 
-    if (error) {
-      throw new Error(`Failed to fetch user polls: ${error.message}`)
-    }
-
-    // Transform database response to match Poll interface
-    return data?.map((poll: any) => ({
-      id: poll.id,
-      title: poll.title,
-      description: poll.description,
-      category: poll.category,
-      status: poll.status,
-      createdAt: poll.created_at,
-      endsAt: poll.ends_at,
-      totalVotes: poll.total_votes,
-      allowMultipleVotes: poll.allow_multiple_votes,
-      anonymousVoting: poll.anonymous_voting,
-      createdBy: poll.created_by,
-      options: poll.poll_options?.map((option: any) => ({
-        id: option.id,
-        text: option.text,
-        votes: option.votes,
-        orderIndex: option.order_index
-      })) || []
-    })) || []
-  } catch (error) {
-    console.error("Error fetching user polls:", error)
-    return [] // Return empty array on error for better UX
-  }
-}
 
 /**
  * Deletes a poll and all associated data
@@ -475,6 +483,51 @@ export async function getUserPolls() {
  * 2. Delete poll record (cascades to options and votes)
  * 3. Clear relevant caches and redirect with success message
  */
+/**
+ * Fetches statistics for the current user's polls
+ * 
+ * @returns {Promise<{totalPolls: number, activePolls: number, totalVotes: number}>} 
+ *          An object containing the user's poll statistics
+ */
+export async function getUserPollsStats() {
+  try {
+    const supabase = await createServerComponentClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { totalPolls: 0, activePolls: 0, totalVotes: 0 };
+    }
+
+    const { data, error } = await supabase
+      .from('polls')
+      .select('id, status, total_votes')
+      .eq('created_by', user.id);
+
+    if (error) {
+      throw new Error(`Failed to fetch user polls stats: ${error.message}`);
+    }
+
+    const now = new Date().toISOString();
+
+    const stats = data.reduce(
+      (acc, poll) => {
+        acc.totalPolls += 1;
+        if (poll.status === 'active') {
+          acc.activePolls += 1;
+        }
+        acc.totalVotes += poll.total_votes;
+        return acc;
+      },
+      { totalPolls: 0, activePolls: 0, totalVotes: 0 }
+    );
+
+    return stats;
+  } catch (error) {
+    console.error("Error fetching user polls stats:", error);
+    return { totalPolls: 0, activePolls: 0, totalVotes: 0 };
+  }
+}
+
 export async function deletePoll(pollId: string) {
   try {
     const supabase = await createServerComponentClient()
