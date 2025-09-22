@@ -223,7 +223,7 @@ export async function getUserStatsOptimized(userId: string) {
       supabase
         .from('polls')
         .select('id, status', { count: 'exact' })
-        .eq('user_id', userId),
+        .eq('created_by', userId),
       supabase
         .from('poll_votes')
         .select('poll_id', { count: 'exact' })
@@ -231,7 +231,7 @@ export async function getUserStatsOptimized(userId: string) {
           (await supabase
             .from('polls')
             .select('id')
-            .eq('user_id', userId)).data?.map(p => p.id) || []
+            .eq('created_by', userId)).data?.map(p => p.id) || []
         )
     ]);
 

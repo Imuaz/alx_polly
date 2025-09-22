@@ -109,6 +109,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
 
 # Site Configuration
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# (Optional) Email Provider
+# RESEND_API_KEY=your_resend_key
+# SENDGRID_API_KEY=your_sendgrid_key
 ```
 
 2. Apply database migrations in Supabase SQL Editor (or CLI):
@@ -116,6 +120,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 - `migrations/0002_add_user_roles.sql` (roles + RLS)
 - `migrations/0003_add_email_to_profiles.sql` (email on profiles)
 - `migrations/0004_create_poll_shares.sql` (share analytics + RLS)
+- `migrations/0005_create_comments.sql` (comments + RLS)
 
 3. Configure Auth (Email/Password enabled) and set Redirect URL to `${NEXT_PUBLIC_SITE_URL}/auth/callback`.
 
@@ -246,8 +251,9 @@ alx-polly/
 - Environment variables set in hosting provider (same as `.env.local`).
 - Ensure middleware allows public access to `/polls` and `/auth/callback` for QR usage.
 - Confirm DB migrations applied and RLS policies enabled.
-- Confirm `poll_shares` table exists and policies applied for anonymous inserts/selects.
+- Confirm `poll_shares` and `comments` tables exist and policies applied.
 - Set `NEXT_PUBLIC_SITE_URL` to production domain for correct email redirects and QR URLs.
+- If enabling email notifications, set `RESEND_API_KEY` or `SENDGRID_API_KEY`.
 
 ### Other Platforms
 

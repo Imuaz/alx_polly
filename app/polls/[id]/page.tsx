@@ -6,6 +6,9 @@ import { SharePoll } from "@/components/polls/share-poll"
 import { getPoll, getPollShareStats } from "@/lib/polls/queries"
 import { createServerComponentClient } from "@/lib/supabase-server"
 import { PollChat } from "@/components/polls/poll-chat"
+import { CommentList } from "@/components/polls/comment-list"
+import { CommentForm } from "@/components/polls/comment-form"
+import { addComment } from "@/lib/polls/comments"
 
 interface PollPageProps {
   params: Promise<{
@@ -79,25 +82,41 @@ export default async function PollPage({ params }: PollPageProps) {
     await supabase.from("poll_shares").insert({ poll_id: id, platform: platform || null })
   }
 
+  async function submitComment(formData: FormData) {
+    "use server"
+    const text = String(formData.get("text") || "").trim()
+    if (!text) return
+    await addComment(id, text)
+  }
+
   return (
     <div className="container mx-auto py-6 max-w-4xl">
       <div className="space-y-6">
-        <PollView poll={poll} submitVote={submitVote} />
+        {/* Landmark: Main voting area */}
+        <section aria-label="Poll voting">
+          <PollView poll={poll} submitVote={submitVote} />
+        </section>
 
         {/* Results + Share: responsive two-column grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section aria-label="Results and sharing" className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col">
             <PollResults poll={poll} />
           </div>
           <div className="flex flex-col">
             <SharePoll poll={poll} initialShareStats={shareStats} recordShare={recordShare} />
           </div>
-        </div>
+        </section>
 
-        {/* Chat section separated below; scrollable content won't push layout */}
-        <div className="w-full">
-          <PollChat pollId={id} />
-        </div>
+        {/* Discussion: Comments and Chat */}
+        <section aria-label="Discussion and chat" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-4">
+            <CommentForm onSubmitAction={submitComment} />
+            <CommentList pollId={id} />
+          </div>
+          <div className="flex flex-col">
+            <PollChat pollId={id} />
+          </div>
+        </section>
       </div>
     </div>
   )

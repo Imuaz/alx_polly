@@ -47,15 +47,15 @@ This document outlines the planned features and their implementation details for
 
 ### 3. 💬 Comments/Discussion System
 
-**Current Status**: Pending
+**Current Status**: PARTIALLY COMPLETED ✅ (basic comments added)
 
 #### Implementation Plan
 
-- [ ] Design and create `comments` table in Supabase
-- [ ] Implement comment components:
-  - CommentList component
-  - CommentForm component
-  - CommentModeration for admins
+- [x] Design and create `comments` table in Supabase (`migrations/0005_create_comments.sql`)
+- [x] Implement comment components:
+  - [x] `CommentList` (server)
+  - [x] `CommentForm` (client + server action)
+  - [ ] `CommentModeration` for admins (future)
 - [ ] Add real-time updates using Supabase subscriptions
 - [ ] Implement comment moderation features
 
@@ -68,19 +68,19 @@ This document outlines the planned features and their implementation details for
 
 ### 4. 📱 Mobile Responsiveness & Accessibility
 
-**Current Status**: In progress (responsive layout and shadcn/ui in place)
+**Current Status**: PARTIALLY COMPLETED ✅ (key pages improved; further audit pending)
 
 #### Implementation Plan
 
-- [ ] Conduct responsive design audit
-- [ ] Implement responsive improvements:
-  - Mobile-first layouts
-  - Touch-friendly interfaces
-  - Flexible components
-- [ ] Add accessibility features:
-  - ARIA labels and roles
-  - Keyboard navigation
-  - Screen reader compatibility
+- [ ] Conduct responsive design audit (site-wide)
+- [x] Implement responsive improvements:
+  - [x] Two-column responsive grid on poll details (`Results` + `Share Poll`)
+  - [x] Dedicated chat section separated; `overflow-auto` for long content
+  - [x] Ensure cards scale with `w-full` and don’t stretch siblings
+- [x] Add accessibility features:
+  - [x] ARIA labels and `htmlFor` in `SharePoll` actions/inputs
+  - [x] Keyboard-friendly attributes on share buttons
+  - [ ] Broader keyboard navigation and screen reader checks
 - [ ] Test across devices and screen readers
 
 #### Technical Requirements
@@ -174,11 +174,11 @@ This document outlines the planned features and their implementation details for
 
 ## Priority Order (Updated)
 
-1. Poll Result Charts (improve data visualization)
-2. Mobile Responsiveness & Accessibility (improve user experience)
-3. Comments/Discussion System (enhance engagement)
-4. Email Notification System (increase user retention)
-5. Testing Infrastructure (ensure reliability)
+1. Email Notification System (increase user retention)
+2. Testing Infrastructure (ensure reliability)
+3. Mobile Responsiveness & Accessibility – complete audit
+4. Poll Result Charts – add time series
+5. Comments – realtime + moderation
 6. AI-powered Reviews (improve code quality)
 
 User Role Management and QR Code Generation are complete and now considered baseline.

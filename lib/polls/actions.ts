@@ -12,6 +12,7 @@ import { createServerComponentClient } from "@/lib/supabase-server"
 import { CreatePollData, Poll, PollFilters, ShareStats } from "@/lib/types/poll"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { sendPollCreatedEmail, sendVoteAlertEmail } from "@/lib/email/notifications"
 
 /**
  * Creates a new poll with options and settings
@@ -97,6 +98,16 @@ export async function createPoll(formData: FormData) {
       throw new Error(`Failed to create poll options: ${optionsError.message}`)
     }
 
+    // Fire-and-forget: optional email notification (if provider configured)
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser()
+      const { data: profile } = await supabase.from("profiles").select("email").eq("id", u?.id).single()
+      if (profile?.email) {
+        // Non-blocking
+        sendPollCreatedEmail(profile.email, title)
+      }
+    } catch {}
+
     // Clear polls cache and redirect with success message
     revalidatePath("/polls")
     redirect("/polls?success=Poll created successfully!")
@@ -180,6 +191,25 @@ export async function votePoll(pollId: string, optionIds: string[]) {
 
     // Note: Vote counts are automatically updated by database triggers
     // This ensures data consistency and reduces race conditions
+
+    // Fire-and-forget: optional vote alert email
+    try {
+      const { data: owner } = await supabase
+        .from("polls")
+        .select("title, created_by")
+        .eq("id", pollId)
+        .single()
+      if (owner?.created_by) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("id", owner.created_by)
+          .single()
+        if (profile?.email && owner?.title) {
+          sendVoteAlertEmail(profile.email, owner.title)
+        }
+      }
+    } catch {}
 
     // Clear poll page cache to show updated results
     revalidatePath(`/polls/${pollId}`)
@@ -414,18 +444,7 @@ export async function getPollShareStats(pollId: string): Promise<ShareStats> {
  * - Includes all poll options and vote counts
  * - Returns empty array if user is not authenticated
  */
-export async function getUserPolls() {
-  try {
-    const supabase = await createServerComponentClient()
-    
-    // Get current user to filter their polls
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      return [] // Return empty array if not authenticated
-    }
-
-
-
+// getUserPolls removed (unused) to avoid bundling issues
 /**
  * Deletes a poll and all associated data
  * 
