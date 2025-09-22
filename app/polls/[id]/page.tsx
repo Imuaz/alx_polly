@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { PollView } from "@/components/polls/poll-view"
 import { PollResults } from "@/components/polls/poll-results"
 import { SharePoll } from "@/components/polls/share-poll"
-import { getPoll } from "@/lib/polls/actions"
+import { getPoll, getPollShareStats } from "@/lib/polls/actions"
 
 interface PollPageProps {
   params: Promise<{
@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: PollPageProps): Promise<Metad
 export default async function PollPage({ params }: PollPageProps) {
   const { id } = await params
   const poll = await getPoll(id)
+  const shareStats = await getPollShareStats(id)
   
   if (!poll) {
     notFound()
@@ -43,7 +44,7 @@ export default async function PollPage({ params }: PollPageProps) {
         
         <div className="grid gap-6 md:grid-cols-2">
           <PollResults poll={poll} />
-          <SharePoll poll={poll} />
+          <SharePoll poll={poll} initialShareStats={shareStats} />
         </div>
       </div>
     </div>

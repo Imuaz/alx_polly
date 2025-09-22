@@ -9,7 +9,7 @@
  */
 
 import { createServerComponentClient } from "@/lib/supabase-server"
-import { CreatePollData, Poll, PollFilters } from "@/lib/types/poll"
+import { CreatePollData, Poll, PollFilters, ShareStats } from "@/lib/types/poll"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -340,6 +340,56 @@ export async function getPoll(id: string): Promise<Poll | null> {
   } catch (error) {
     console.error("Error fetching poll:", error)
     return null // Return null for graceful error handling
+  }
+}
+
+/**
+ * Records a share event for analytics
+ */
+export async function recordPollShare(pollId: string, platform?: string) {
+  try {
+    const supabase = await createServerComponentClient()
+
+    const { error } = await supabase.from("poll_shares").insert({
+      poll_id: pollId,
+      platform: platform || null,
+    })
+
+    if (error) {
+      throw new Error(`Failed to record share: ${error.message}`)
+    }
+
+    revalidatePath(`/polls/${pollId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Error recording poll share:", error)
+    return { success: false }
+  }
+}
+
+/**
+ * Fetches share stats for a poll (total and today)
+ */
+export async function getPollShareStats(pollId: string): Promise<ShareStats> {
+  try {
+    const supabase = await createServerComponentClient()
+
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+
+    const [{ count: total }, { count: today }] = await Promise.all([
+      supabase.from("poll_shares").select("id", { count: "exact", head: true }).eq("poll_id", pollId),
+      supabase
+        .from("poll_shares")
+        .select("id", { count: "exact", head: true })
+        .eq("poll_id", pollId)
+        .gte("created_at", startOfToday.toISOString()),
+    ])
+
+    return { total: total || 0, today: today || 0 }
+  } catch (error) {
+    console.error("Error fetching poll share stats:", error)
+    return { total: 0, today: 0 }
   }
 }
 

@@ -14,6 +14,11 @@ export interface Poll {
   tags?: string[]
 }
 
+export interface ShareStats {
+  total: number
+  today: number
+}
+
 export interface PollOption {
   id: string
   text: string
