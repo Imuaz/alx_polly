@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef } from "react"
-import QRCodeReact from "qrcode.react"
+import { QRCodeCanvas } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 
 interface QRCodeProps {
@@ -26,7 +26,7 @@ export function QRCode({ value, size = 160, className, fileName = "qr-code.png" 
   return (
     <div className={className}>
       <div className="flex items-center justify-center p-3 bg-white rounded-md border">
-        <QRCodeReact value={value} size={size} renderAs="canvas" includeMargin={true} ref={canvasRef as any} />
+        <QRCodeCanvas value={value} size={size} includeMargin={true} ref={canvasRef as any} />
       </div>
       <div className="mt-2 flex justify-center">
         <Button variant="outline" size="sm" onClick={handleDownload}>Download QR</Button>
