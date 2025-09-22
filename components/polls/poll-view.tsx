@@ -44,6 +44,7 @@ export function PollView({ poll, submitVote }: PollViewProps) {
     setIsLoading(true)
     try {
       const formData = new FormData()
+      formData.append("pollId", poll.id)
       selectedOptions.forEach((id) => formData.append("option", id))
       await submitVote(formData)
       setHasVoted(true)

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { getPollsOptimized } from '@/lib/data/optimized-polls-server';
 import { PollCardSkeleton } from '@/components/ui/loading-states';
 import { PollView } from '@/components/polls/poll-view';
+import { submitVoteAction } from '@/lib/polls/actions';
 
 interface PollsStreamingProps {
   filters?: {
@@ -30,7 +31,7 @@ async function PollsList({ filters }: PollsStreamingProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {polls.map((poll) => (
-        <PollView key={poll.id} poll={poll} />
+        <PollView key={poll.id} poll={poll} submitVote={submitVoteAction} />
       ))}
     </div>
   );

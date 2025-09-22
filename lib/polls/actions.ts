@@ -221,6 +221,21 @@ export async function votePoll(pollId: string, optionIds: string[]) {
 }
 
 /**
+ * Server Action wrapper for votePoll to be used with forms.
+ * This action is compatible with the signature expected by PollView.
+ */
+export async function submitVoteAction(formData: FormData): Promise<void> {
+  const pollId = formData.get('pollId') as string;
+  const optionIds = formData.getAll('option').map(String);
+
+  if (!pollId || optionIds.length === 0) {
+    throw new Error('Poll ID and at least one option are required.');
+  }
+
+  await votePoll(pollId, optionIds);
+}
+
+/**
  * Server Action: Handles vote submission from a form
  * Expects multiple inputs named "option" containing option IDs
  */

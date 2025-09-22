@@ -52,7 +52,7 @@ pnpm install
 
 ### 3. Environment Variables
 
-Create a `.env.local` file in the root directory:
+Create a `.env.local` file in the root of your project with the following content. You can get the `SUPABASE_URL` and `SUPABASE_ANON_KEY` from your Supabase project's **Settings > API** page.
 
 ```env
 # Supabase Configuration
@@ -64,12 +64,18 @@ SUPABASE_SECRET_KEY=your_supabase_secret_key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-### 4. Supabase Setup
+### 4. Supabase Database Setup
 
-1. Create a new project in [Supabase](https://supabase.com)
-2. Run the database schema from `supabase-schema.sql`
-3. Set up authentication providers (email/password is enabled by default)
-4. Configure email templates for verification (optional)
+1.  Go to the **SQL Editor** in your Supabase dashboard.
+2.  Create a **New Query**.
+3.  Run the schema scripts from the `/migrations` directory in order. This will create the necessary tables (`profiles`, `polls`, `poll_options`, `poll_votes`), enable Row Level Security (RLS), and set up required policies.
+
+### 5. Supabase Authentication Setup
+
+1.  In your Supabase dashboard, go to **Authentication > Settings**.
+2.  Under **Site URL**, add your development URL: `http://localhost:3000`.
+3.  Under **Redirect URLs**, add your callback URL: `http://localhost:3000/auth/callback`.
+4.  Enable **Email confirmations** under the **Email Auth** section.
 
 ### 5. Database Schema
 
