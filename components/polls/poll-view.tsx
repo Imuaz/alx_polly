@@ -151,7 +151,7 @@ export function PollView({ poll, submitVote }: PollViewProps) {
 
   // Voting interface - shown before user votes
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {poll.title}

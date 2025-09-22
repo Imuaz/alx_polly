@@ -26,17 +26,17 @@ This document outlines the planned features and their implementation details for
 
 ### 2. 📊 Poll Result Charts
 
-**Current Status**: Pending (basic textual results only)
+**Current Status**: PARTIALLY COMPLETED ✅ (pie + bar charts added)
 
 #### Implementation Plan
 
-- [ ] Install and configure charting library (Chart.js/Recharts)
-- [ ] Create new `PollChart` component
-- [ ] Implement different visualization types:
-  - Pie charts for option distribution
-  - Bar graphs for vote counts
-  - Time series for voting patterns
-- [ ] Add responsive and accessible chart features
+- [x] Install and configure charting library (Recharts)
+- [x] Create new `PollChart` component (client) with responsive containers
+- [x] Implement visualization types:
+  - [x] Pie charts for option distribution
+  - [x] Bar graphs for vote counts
+  - [ ] Time series for voting patterns (future enhancement)
+- [x] Add responsive and accessible chart features
 
 #### Technical Requirements
 

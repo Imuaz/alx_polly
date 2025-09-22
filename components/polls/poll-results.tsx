@@ -17,7 +17,7 @@ export function PollResults({ poll }: PollResultsProps) {
   const chartData = poll.options.map(o => ({ name: o.text, value: o.votes }))
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />

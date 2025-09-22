@@ -77,14 +77,15 @@ export function SharePoll({ poll, initialShareStats, recordShare }: SharePollPro
       <CardContent className="space-y-4">
         {/* Direct Link */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Poll Link</label>
+          <label className="text-sm font-medium" htmlFor="poll-link">Poll Link</label>
           <div className="flex gap-2">
-            <Input value={pollUrl} readOnly className="flex-1" />
+            <Input id="poll-link" value={pollUrl} readOnly className="flex-1" aria-readonly aria-label="Poll link" />
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
               className="shrink-0"
+              aria-label="Copy poll link"
             >
               {copied ? (
                 <Check className="h-4 w-4" />
@@ -107,6 +108,7 @@ export function SharePoll({ poll, initialShareStats, recordShare }: SharePollPro
               size="sm"
               onClick={() => handleShare('twitter')}
               className="flex-1"
+              aria-label="Share on Twitter"
             >
               <Twitter className="h-4 w-4 mr-2" />
               Twitter
@@ -116,6 +118,7 @@ export function SharePoll({ poll, initialShareStats, recordShare }: SharePollPro
               size="sm"
               onClick={() => handleShare('facebook')}
               className="flex-1"
+              aria-label="Share on Facebook"
             >
               <Facebook className="h-4 w-4 mr-2" />
               Facebook
@@ -125,6 +128,7 @@ export function SharePoll({ poll, initialShareStats, recordShare }: SharePollPro
               size="sm"
               onClick={() => handleShare('linkedin')}
               className="flex-1"
+              aria-label="Share on LinkedIn"
             >
               <Linkedin className="h-4 w-4 mr-2" />
               LinkedIn
@@ -135,7 +139,9 @@ export function SharePoll({ poll, initialShareStats, recordShare }: SharePollPro
         {/* QR Code */}
         <div className="space-y-2">
           <label className="text-sm font-medium">QR Code</label>
-          <QRCode value={pollUrl} className="p-2" fileName={`poll-${poll.id}-qr.png`} />
+          <div className="overflow-auto">
+            <QRCode value={pollUrl} className="p-2" fileName={`poll-${poll.id}-qr.png`} />
+          </div>
         </div>
 
         {/* Share Stats */}
