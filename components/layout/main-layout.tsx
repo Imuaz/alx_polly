@@ -4,7 +4,7 @@ import { ReactNode, Suspense } from "react";
 import { Navbar } from "./navbar";
 import { MobileNav } from "./mobile-nav";
 import { LoadingScreen, PageLoading } from "@/components/ui/loading-screen";
-import { useLoading } from "@/components/providers/simple-loading-provider";
+import { useLoading } from "@/components/providers/smart-loading-provider";
 
 interface MainLayoutProps {
   children: ReactNode;

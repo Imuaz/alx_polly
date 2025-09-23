@@ -4,9 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider, ThemeScript } from "@/components/theme/theme-provider";
 import {
-  LoadingProvider as SimpleLoadingProvider,
-} from "@/components/providers/simple-loading-provider";
-import { LoadingProvider } from "@/components/providers/loading-provider";
+  LoadingProvider,
+} from "@/components/providers/smart-loading-provider";
 import { Toaster } from "sonner";
 
 // Use system fonts as fallback for better performance
@@ -59,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>
@@ -74,34 +73,32 @@ export default function RootLayout({
           storageKey="theme"
           themes={["light", "dark", "system"]}
         >
-          <SimpleLoadingProvider
+          <LoadingProvider
             defaultMessage="Loading your app..."
-            enableRouteLoading={true}
+            enableRouteLoading={false}
           >
-            <LoadingProvider>
-              <AuthProvider>
-                <div
-                  vaul-drawer-wrapper=""
-                  className="min-h-screen bg-background"
-                >
-                  {children}
-                </div>
-                <Toaster
-                  position="bottom-right"
-                  expand={true}
-                  richColors
-                  closeButton
-                  toastOptions={{
-                    style: {
-                      background: "hsl(var(--background))",
-                      border: "1px solid hsl(var(--border))",
-                      color: "hsl(var(--foreground))",
-                    },
-                  }}
-                />
-              </AuthProvider>
-            </LoadingProvider>
-          </SimpleLoadingProvider>
+            <AuthProvider>
+              <div
+                vaul-drawer-wrapper=""
+                className="min-h-screen bg-background"
+              >
+                {children}
+              </div>
+              <Toaster
+                position="bottom-right"
+                expand={true}
+                richColors
+                closeButton
+                toastOptions={{
+                  style: {
+                    background: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    color: "hsl(var(--foreground))",
+                  },
+                }}
+              />
+            </AuthProvider>
+          </LoadingProvider>
         </ThemeProvider>
       </body>
     </html>

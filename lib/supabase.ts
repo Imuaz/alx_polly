@@ -11,6 +11,7 @@ export function createClient() {
     return {
       auth: {
         getSession: async () => ({ data: { session: null }, error: null }),
+        getUser: async () => ({ data: { user: null }, error: null }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
         signInWithPassword: async () => ({ error: { message: 'Supabase not configured' } }),
         signUp: async () => ({ error: { message: 'Supabase not configured' }, data: null }),
@@ -20,5 +21,16 @@ export function createClient() {
     } as any
   }
 
-  return createBrowserClient(supabaseUrl, supabaseKey)
+  return createBrowserClient(supabaseUrl, supabaseKey, {
+    auth: {
+      // Enable session persistence across tabs and page reloads
+      persistSession: true,
+      // Automatically detect authentication storage
+      detectSessionInUrl: true,
+      // Configure storage for better cross-tab sync
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      // Automatically refresh sessions before they expire
+      autoRefreshToken: true,
+    }
+  })
 }

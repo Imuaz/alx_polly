@@ -23,6 +23,8 @@ export function LoadingScreen({
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
     if (show) {
       setIsVisible(true);
       setIsAnimating(true);
@@ -30,16 +32,19 @@ export function LoadingScreen({
       document.body.style.overflow = "hidden";
     } else {
       setIsAnimating(false);
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setIsVisible(false);
         document.body.style.overflow = "unset";
         onComplete?.();
       }, 200); // Wait for exit animation
-      return () => clearTimeout(timer);
     }
 
     return () => {
-      document.body.style.overflow = "unset";
+      if (timer) clearTimeout(timer);
+      // Always restore scroll when component unmounts or show changes
+      if (!show) {
+        document.body.style.overflow = "unset";
+      }
     };
   }, [show, onComplete]);
 

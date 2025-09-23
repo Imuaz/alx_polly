@@ -9,6 +9,7 @@ import { PollChat } from "@/components/polls/poll-chat"
 import { CommentList } from "@/components/polls/comment-list"
 import { CommentForm } from "@/components/polls/comment-form"
 import { addComment } from "@/lib/polls/comments"
+import { submitVoteAction } from "@/lib/polls/vote-actions"
 
 interface PollPageProps {
   params: Promise<{
@@ -42,38 +43,10 @@ export default async function PollPage({ params }: PollPageProps) {
     notFound()
   }
 
+  // Simple wrapper that delegates to the improved vote action
   async function submitVote(formData: FormData) {
     "use server"
-    const supabase = await createServerComponentClient()
-    const optionIds = formData.getAll("option").map(String)
-
-    // Auth check
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      throw new Error("Authentication required")
-    }
-
-    // Validate poll
-    const { data: poll } = await supabase
-      .from("polls")
-      .select("allow_multiple_votes, status")
-      .eq("id", id)
-      .single()
-
-    if (!poll) throw new Error("Poll not found")
-    if (poll.status !== "active") throw new Error("This poll is no longer active")
-    if (!poll.allow_multiple_votes && optionIds.length > 1) {
-      throw new Error("Only one option can be selected for this poll")
-    }
-
-    const voteInserts = optionIds.map(optionId => ({
-      poll_id: id,
-      user_id: user.id,
-      option_id: optionId
-    }))
-
-    const { error: voteError } = await supabase.from("poll_votes").insert(voteInserts)
-    if (voteError) throw new Error(`Failed to record vote: ${voteError.message}`)
+    return await submitVoteAction(formData)
   }
 
   async function recordShare(platform?: string) {

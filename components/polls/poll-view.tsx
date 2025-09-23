@@ -24,7 +24,7 @@ import { toast } from "sonner"
 
 interface PollViewProps {
   poll: Poll;
-  submitVote: (formData: FormData) => Promise<void>;
+  submitVote: (formData: FormData) => Promise<{ success: boolean; message: string } | void>;
 }
 
 export function PollView({ poll, submitVote }: PollViewProps) {
@@ -46,9 +46,18 @@ export function PollView({ poll, submitVote }: PollViewProps) {
       const formData = new FormData()
       formData.append("pollId", poll.id)
       selectedOptions.forEach((id) => formData.append("option", id))
-      await submitVote(formData)
+      
+      const result = await submitVote(formData)
+      
       setHasVoted(true)
-      toast.success("Vote submitted successfully!")
+      
+      // Show appropriate success message based on server response
+      if (result && result.message) {
+        toast.success(result.message)
+      } else {
+        toast.success("Vote submitted successfully!")
+      }
+      
     } catch (error) {
       console.error("Voting error:", error)
       const errorMessage = error instanceof Error ? error.message : "Failed to submit vote"
@@ -201,7 +210,7 @@ export function PollView({ poll, submitVote }: PollViewProps) {
             </div>
           ) : (
             // Single choice interface with radio buttons
-            <RadioGroup value={selectedOptions[0]} onValueChange={handleOptionSelect}>
+            <RadioGroup value={selectedOptions[0] || ""} onValueChange={handleOptionSelect}>
               {poll.options.map((option) => (
                 <div key={option.id} className="flex items-center space-x-2">
                   <RadioGroupItem value={option.id} id={option.id} />

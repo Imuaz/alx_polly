@@ -31,56 +31,74 @@ interface LoadingProviderProps {
 export function LoadingProvider({
   children,
   defaultMessage = "Loading...",
-  enableRouteLoading = true,
+  enableRouteLoading = false, // Disabled by default to prevent auth conflicts
 }: LoadingProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState(defaultMessage);
   const [variant, setVariant] = useState<"default" | "minimal" | "logo">("default");
+  const [manualLoading, setManualLoading] = useState(false);
   const pathname = usePathname();
 
-  // Handle route changes
+  // Handle route changes - but only for manual navigation, not auth redirects
   useEffect(() => {
-    if (!enableRouteLoading) return;
+    if (!enableRouteLoading || manualLoading) return;
 
     let timeoutId: NodeJS.Timeout;
-    let cleanupTimeoutId: NodeJS.Timeout;
+    let isAuthPath = pathname === '/login' || pathname === '/verify-email' || pathname === '/register';
+    
+    // Don't show loading overlay for auth-related paths or very quick transitions
+    if (isAuthPath) {
+      return;
+    }
 
-    // Show loading immediately on pathname change
+    // Show minimal loading for non-auth route changes
     setIsLoading(true);
-    setMessage("Navigating...");
+    setMessage("Loading...");
     setVariant("minimal");
 
-    // Hide loading after a short delay to allow page to settle
+    // Very short loading time to avoid interfering with Next.js
     timeoutId = setTimeout(() => {
       setIsLoading(false);
-    }, 150); // Reduced from 300ms to 150ms for better UX
+    }, 100);
 
     return () => {
       clearTimeout(timeoutId);
-      clearTimeout(cleanupTimeoutId);
-      // Force cleanup after a longer delay to prevent stuck states
-      cleanupTimeoutId = setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
     };
-  }, [pathname, enableRouteLoading]);
+  }, [pathname, enableRouteLoading, manualLoading]);
 
-  const showLoading = useCallback((
-    newMessage?: string,
-    newVariant: "default" | "minimal" | "logo" = "default"
-  ) => {
-    setIsLoading(true);
-    setMessage(newMessage || defaultMessage);
-    setVariant(newVariant);
-  }, [defaultMessage]);
+  const showLoading = useCallback(
+    (
+      newMessage?: string,
+      newVariant: "default" | "minimal" | "logo" = "default"
+    ) => {
+      setManualLoading(true);
+      setIsLoading(true);
+      setMessage(newMessage || defaultMessage);
+      setVariant(newVariant);
+    },
+    [defaultMessage]
+  );
 
   const hideLoading = useCallback(() => {
     setIsLoading(false);
+    setManualLoading(false);
   }, []);
 
   const updateMessage = useCallback((newMessage: string) => {
     setMessage(newMessage);
   }, []);
+
+  // Auto-hide manual loading after a reasonable time to prevent stuck states
+  useEffect(() => {
+    if (manualLoading && isLoading) {
+      const maxTimeout = setTimeout(() => {
+        setIsLoading(false);
+        setManualLoading(false);
+      }, 10000); // 10 second maximum
+
+      return () => clearTimeout(maxTimeout);
+    }
+  }, [manualLoading, isLoading]);
 
   const contextValue: LoadingContextType = {
     isLoading,
@@ -142,86 +160,27 @@ export function useAsyncOperation() {
   const { showLoading, hideLoading } = useLoading();
 
   const executeAsync = useCallback(
-    <T,>(
+    async <T,>(
       operation: () => Promise<T>,
       options?: {
         loadingMessage?: string;
         variant?: "default" | "minimal" | "logo";
       }
     ): Promise<T> => {
-      return new Promise(async (resolve, reject) => {
-        try {
-          showLoading(
-            options?.loadingMessage || "Processing...",
-            options?.variant || "default"
-          );
+      try {
+        showLoading(
+          options?.loadingMessage || "Processing...",
+          options?.variant || "default"
+        );
 
-          const result = await operation();
-          resolve(result);
-        } catch (error) {
-          reject(error);
-        } finally {
-          hideLoading();
-        }
-      });
+        const result = await operation();
+        return result;
+      } finally {
+        hideLoading();
+      }
     },
     [showLoading, hideLoading]
   );
 
   return { executeAsync };
-}
-
-// Simple error boundary
-interface ErrorBoundaryProps {
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-interface ErrorState {
-  hasError: boolean;
-}
-
-export class LoadingErrorBoundary extends React.Component<
-  ErrorBoundaryProps,
-  ErrorState
-> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(): ErrorState {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Loading Error Boundary caught an error:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        this.props.fallback || (
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center space-y-4">
-              <h2 className="text-xl font-semibold text-destructive">
-                Something went wrong
-              </h2>
-              <p className="text-muted-foreground">
-                There was an error loading the content. Please refresh the page.
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-              >
-                Refresh Page
-              </button>
-            </div>
-          </div>
-        )
-      );
-    }
-
-    return this.props.children;
-  }
 }

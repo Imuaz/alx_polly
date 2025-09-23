@@ -14,8 +14,10 @@ export async function middleware(request: NextRequest) {
     pathname === '/register' ||
     pathname === '/verify-email' ||
     pathname.startsWith('/auth/callback') ||
-    // Allow viewing polls (including nested routes like /polls/[id]) without auth for QR access
-    pathname.startsWith('/polls')
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('favicon') ||
+    pathname.includes('.')
 
   if (isPublicRoute) {
     return supabaseResponse
@@ -55,9 +57,21 @@ export async function middleware(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null;
+  try {
+    const {
+      data: { user: authUser },
+      error
+    } = await supabase.auth.getUser();
+    
+    // Only set user if there's no error and we have a valid user
+    if (!error && authUser) {
+      user = authUser;
+    }
+  } catch (error) {
+    console.error('Middleware auth check failed:', error);
+    // Continue without user to prevent blocking requests
+  }
 
   // If user is not signed in and the current path is not a public route,
   // redirect the user to /login
@@ -67,9 +81,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If user is signed in and the current path is a public route,
-  // redirect the user to /polls
-  if (user && isPublicRoute) {
+  // If user is signed in and trying to access auth pages, redirect to polls
+  if (user && (pathname === '/login' || pathname === '/register')) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/polls'
     return NextResponse.redirect(redirectUrl)

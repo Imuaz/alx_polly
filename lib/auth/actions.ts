@@ -13,15 +13,31 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 /**
+ * Helper function to check if an error is a Next.js redirect error
+ * @param error - The error to check
+ * @returns boolean indicating if this is a redirect error
+ */
+function isNextRedirectError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message === "NEXT_REDIRECT" &&
+    "digest" in error &&
+    typeof error.digest === "string" &&
+    error.digest.startsWith("NEXT_REDIRECT")
+  )
+}
+
+/**
  * Handles user sign-in with email and password
  * 
  * @param formData - Form data containing email and password fields
- * @throws {Error} When email/password are missing or authentication fails
+ * @returns {Object} Success or error response object
  * 
  * Flow:
  * 1. Extract and validate email/password from form data
  * 2. Authenticate user with Supabase Auth
- * 3. Revalidate layout cache and redirect to polls page on success
+ * 3. Return structured response instead of throwing errors
+ * 4. On success, revalidate cache and redirect to polls page
  */
 export async function signInAction(formData: FormData) {
   try {
@@ -33,7 +49,10 @@ export async function signInAction(formData: FormData) {
 
     // Validate required fields
     if (!email || !password) {
-      throw new Error("Email and password are required")
+      return { 
+        success: false, 
+        error: "Email and password are required. Please fill in all fields." 
+      }
     }
 
     // Attempt authentication with Supabase
@@ -43,15 +62,27 @@ export async function signInAction(formData: FormData) {
     })
 
     if (error) {
-      throw new Error(error.message)
+      return { 
+        success: false, 
+        error: "Invalid login credentials. Please check your email and password and try again." 
+      }
     }
 
-    // Clear cache and redirect to main app on successful login
+    // Clear cache on successful login - do NOT redirect here to avoid loops
     revalidatePath("/", "layout")
-    redirect("/polls")
+    revalidatePath("/polls")
+    
+    return { 
+      success: true, 
+      message: "Login successful" 
+    }
   } catch (error) {
     console.error("Sign in error:", error)
-    throw error
+    // Return error response for unexpected errors instead of throwing
+    return { 
+      success: false, 
+      error: "An unexpected error occurred. Please try again later." 
+    }
   }
 }
 
@@ -59,7 +90,7 @@ export async function signInAction(formData: FormData) {
  * Handles new user registration with email verification
  * 
  * @param formData - Form data containing email, password, and fullName fields
- * @throws {Error} When required fields are missing or registration fails
+ * @returns {Object} Success or error response object
  * 
  * Flow:
  * 1. Extract and validate user registration data
@@ -78,7 +109,10 @@ export async function signUpAction(formData: FormData) {
 
     // Validate all required fields are present
     if (!email || !password || !fullName) {
-      throw new Error("All fields are required")
+      return { 
+        success: false, 
+        error: "All fields are required. Please fill in your email, password, and full name." 
+      }
     }
 
     // Get the origin URL for email confirmation redirect
@@ -97,7 +131,10 @@ export async function signUpAction(formData: FormData) {
     })
 
     if (error) {
-      throw new Error(error.message)
+      return { 
+        success: false, 
+        error: error.message || "Registration failed. Please try again." 
+      }
     }
 
     // Check if email confirmation is required (user created but no session)
@@ -109,15 +146,24 @@ export async function signUpAction(formData: FormData) {
     revalidatePath("/", "layout")
     redirect("/polls")
   } catch (error) {
+    // Check if it's the special redirect error from Next.js
+    if (isNextRedirectError(error)) {
+      throw error // Re-throw it so Next.js can handle the redirect
+    }
+    
     console.error("Sign up error:", error)
-    throw error
+    // Return error response for unexpected errors instead of throwing
+    return { 
+      success: false, 
+      error: "An unexpected error occurred during registration. Please try again later." 
+    }
   }
 }
 
 /**
  * Handles user sign-out and session cleanup
  * 
- * @throws {Error} When sign-out fails
+ * @throws {Error} When sign-out fails (re-throws redirect errors for Next.js handling)
  * 
  * Flow:
  * 1. Sign out user from Supabase Auth
@@ -139,6 +185,11 @@ export async function signOutAction() {
     revalidatePath("/", "layout")
     redirect("/login")
   } catch (error) {
+    // Check if it's the special redirect error from Next.js
+    if (isNextRedirectError(error)) {
+      throw error // Re-throw it so Next.js can handle the redirect
+    }
+    
     console.error("Sign out error:", error)
     throw error
   }
@@ -148,8 +199,7 @@ export async function signOutAction() {
  * Resends email verification for unverified accounts
  * 
  * @param formData - Form data containing the email address
- * @returns {Object} Success response with confirmation message
- * @throws {Error} When email is missing or resend fails
+ * @returns {Object} Success or error response object
  * 
  * Used when users need to receive a new verification email
  */
@@ -161,7 +211,10 @@ export async function resendVerificationAction(formData: FormData) {
     const email = formData.get("email") as string
 
     if (!email) {
-      throw new Error("Email is required")
+      return { 
+        success: false, 
+        error: "Email is required to resend verification." 
+      }
     }
 
     // Get the origin URL for email confirmation redirect
@@ -177,13 +230,19 @@ export async function resendVerificationAction(formData: FormData) {
     })
 
     if (error) {
-      throw new Error(error.message)
+      return { 
+        success: false, 
+        error: error.message || "Failed to resend verification email. Please try again." 
+      }
     }
 
     return { success: true, message: "Verification email sent successfully" }
   } catch (error) {
     console.error("Resend verification error:", error)
-    throw error
+    return { 
+      success: false, 
+      error: "An unexpected error occurred. Please try again later." 
+    }
   }
 }
 
@@ -250,8 +309,7 @@ export async function getUserProfile(userId: string) {
  * Updates user profile information in the profiles table
  * 
  * @param formData - Form data containing fullName and bio fields
- * @returns {Object} Success response with confirmation message
- * @throws {Error} When user is not authenticated or update fails
+ * @returns {Object} Success or error response object
  * 
  * Flow:
  * 1. Verify user authentication
@@ -266,7 +324,10 @@ export async function updateUserProfile(formData: FormData) {
     // Verify user is authenticated before allowing profile updates
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
-      throw new Error("Authentication required")
+      return { 
+        success: false, 
+        error: "Authentication required. Please sign in and try again." 
+      }
     }
 
     // Extract profile data from form
@@ -275,7 +336,10 @@ export async function updateUserProfile(formData: FormData) {
 
     // Validate required fields
     if (!fullName) {
-      throw new Error("Full name is required")
+      return { 
+        success: false, 
+        error: "Full name is required." 
+      }
     }
 
     // Update or insert profile data using upsert
@@ -289,7 +353,10 @@ export async function updateUserProfile(formData: FormData) {
       })
 
     if (error) {
-      throw new Error(`Failed to update profile: ${error.message}`)
+      return { 
+        success: false, 
+        error: `Failed to update profile: ${error.message}` 
+      }
     }
 
     // Clear profile page cache to show updated data
@@ -297,6 +364,9 @@ export async function updateUserProfile(formData: FormData) {
     return { success: true, message: "Profile updated successfully" }
   } catch (error) {
     console.error("Update profile error:", error)
-    throw error
+    return { 
+      success: false, 
+      error: "An unexpected error occurred while updating your profile. Please try again later." 
+    }
   }
 }

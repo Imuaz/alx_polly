@@ -9,11 +9,12 @@
  * - Email verification reminders
  * - Responsive design with modern UI
  * - Integration with Supabase authentication
- * - Global loading system integration
+ * - Client-side cache invalidation after login
  */
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,87 +29,74 @@ import {
 import { Icons } from "@/components/ui/icons";
 import { toast } from "sonner";
 import { AlertCircle, Mail, Lock, ArrowRight } from "lucide-react";
-import { signInAction } from "@/lib/auth/actions";
-import { useAuthLoading } from "@/components/providers/simple-loading-provider";
+import { useAuth } from "@/contexts/auth-context";
 
 interface LoginFormProps extends React.ComponentProps<typeof Card> {}
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
-  // Use global auth loading system
-  const { showAuthLoading, hideAuthLoading } = useAuthLoading();
+  const router = useRouter();
+  const { signIn, loading } = useAuth();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   /**
    * Handles form submission for user login
    *
-   * @param formData - Form data containing email and password
+   * @param event - Form submission event
    *
    * Features:
-   * - Calls server action for authentication
+   * - Uses auth context for better state management
+   * - Handles client-side authentication
    * - Provides specific error messages for common issues
-   * - Handles loading states and user feedback
-   * - Redirects on successful login (handled by server action)
+   * - Lets middleware handle redirects to prevent conflicts
    */
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setIsLoading(true);
-    showAuthLoading("signin");
 
     try {
-      await signInAction(formData);
-      toast.success("Signed in successfully");
-      // Redirect handled by server action
-    } catch (error) {
-      // Allow Next.js redirect errors to bubble so navigation proceeds
-      if (
-        error &&
-        typeof error === "object" &&
-        // @ts-ignore - digest exists on Next.js redirect errors
-        typeof (error as any).digest === "string" &&
-        // @ts-ignore
-        (error as any).digest.startsWith("NEXT_REDIRECT")
-      ) {
-        throw error;
+      const formData = new FormData(event.currentTarget);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+
+      if (!email || !password) {
+        toast.error("Please fill in all fields.");
+        return;
       }
 
-      console.error("Sign in error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to sign in";
-
-      // Provide user-friendly error messages for common scenarios
-      if (errorMessage.includes("Email not confirmed")) {
-        toast.error(
-          "Please verify your email address before signing in. Check your inbox for a verification link.",
-        );
-      } else if (errorMessage.includes("Invalid login credentials")) {
-        toast.error("Invalid email or password. Please try again.");
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        // Provide user-friendly error messages for common scenarios
+        if (error.message?.includes("Email not confirmed")) {
+          toast.error(
+            "Please verify your email address before signing in. Check your inbox for a verification link.",
+          );
+        } else if (error.message?.includes("Invalid login credentials")) {
+          toast.error("Invalid email or password. Please try again.");
+        } else {
+          toast.error(error.message || "Failed to sign in");
+        }
       } else {
-        toast.error(errorMessage);
+        toast.success("Signed in successfully");
+        // Let the auth context and middleware handle the redirect
+        router.push("/polls");
       }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
-      hideAuthLoading();
     }
   }
 
   return (
     <Card
-      className={`shadow-xl border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 ${className}`}
+      className={`shadow-lg sm:shadow-xl border border-slate-200/50 dark:border-slate-700/50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm ${className}`}
       {...props}
     >
-      <CardHeader className="space-y-3 pb-6">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 mx-auto mb-2">
-          <Icons.logo className="h-6 w-6 text-white" />
-        </div>
-        <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-          Welcome back
-        </CardTitle>
-        <CardDescription className="text-center text-muted-foreground">
-          Enter your credentials to access your account
-        </CardDescription>
-      </CardHeader>
-      <form action={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-2 sm:space-y-3 pt-3 sm:pt-4 px-3 sm:px-4">
+          <div className="space-y-1">
             <Label htmlFor="email" className="text-sm font-medium">
               Email address
             </Label>
@@ -119,13 +107,13 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
                 name="email"
                 type="email"
                 placeholder="Enter your email"
-                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="pl-10 h-10 sm:h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-base sm:text-sm"
                 required
               />
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="password" className="text-sm font-medium">
               Password
             </Label>
@@ -136,34 +124,30 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
                 name="password"
                 type="password"
                 placeholder="Enter your password"
-                className="pl-10 h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="pl-10 h-10 sm:h-11 border-2 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-base sm:text-sm"
                 required
                 minLength={6}
               />
             </div>
           </div>
 
-          {/* Email verification reminder */}
-          <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-700 dark:text-blue-300">
-              <p className="font-medium mb-1">Email verification required</p>
-              <p className="mb-2">
-                Make sure to verify your email address before signing in.
-              </p>
+          {/* Compact email verification reminder */}
+          <div className="flex items-center gap-2 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+            <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <div className="text-xs text-blue-700 dark:text-blue-300">
+              <span className="font-medium">Email verification required.</span>
               <Link
                 href="/verify-email"
-                className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
+                className="ml-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium hover:underline transition-colors"
               >
-                Need to verify your email?
-                <ArrowRight className="h-3 w-3 ml-1" />
+                Verify here
               </Link>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="pt-6">
+        <CardFooter className="pt-2 sm:pt-3 px-3 sm:px-4">
           <Button
-            className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+            className="w-full h-11 sm:h-10 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-medium text-base sm:text-sm"
             type="submit"
             disabled={isLoading}
           >

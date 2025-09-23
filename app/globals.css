@@ -316,6 +316,369 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* Auth page animations - enhanced for new backgrounds */
+    @keyframes float-gentle {
+        0%, 100% {
+            transform: translateY(0px) translateX(0px);
+        }
+        25% {
+            transform: translateY(-10px) translateX(5px);
+        }
+        50% {
+            transform: translateY(-5px) translateX(-3px);
+        }
+        75% {
+            transform: translateY(-15px) translateX(2px);
+        }
+    }
+
+    @keyframes pulse-glow {
+        0%, 100% {
+            opacity: 0.4;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+    }
+    
+    @keyframes float-slow {
+        0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+        }
+        33% {
+            transform: translateY(-8px) rotate(2deg);
+        }
+        66% {
+            transform: translateY(8px) rotate(-2deg);
+        }
+    }
+    
+    @keyframes mesh-rotate {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes gradient-shift {
+        0%, 100% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    @keyframes text-glow {
+        0%, 100% {
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+        }
+        50% {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3), 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+    }
+
+    @keyframes data-bar-grow {
+        0% {
+            width: 0%;
+            opacity: 0;
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            width: var(--final-width);
+            opacity: 1;
+        }
+    }
+
+    @keyframes counter-up {
+        0% {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .animate-float-gentle {
+        animation: float-gentle 6s ease-in-out infinite;
+    }
+
+    .animate-pulse-glow {
+        animation: pulse-glow 3s ease-in-out infinite;
+    }
+    
+    .animate-float-slow {
+        animation: float-slow 8s ease-in-out infinite;
+    }
+    
+    .animate-mesh-rotate {
+        animation: mesh-rotate 120s linear infinite;
+    }
+
+    .animate-gradient-shift {
+        background-size: 400% 400%;
+        animation: gradient-shift 8s ease infinite;
+    }
+
+    .animate-text-glow {
+        animation: text-glow 4s ease-in-out infinite;
+    }
+
+    .animate-data-bar {
+        animation: data-bar-grow 2s ease-out forwards;
+    }
+
+    .animate-counter-up {
+        animation: counter-up 1s ease-out forwards;
+    }
+
+    /* Enhanced backdrop effects for auth pages */
+    .auth-backdrop {
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+    }
+
+    .auth-glass {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Responsive text scaling for auth pages */
+    @media (max-width: 768px) {
+        .auth-text-responsive {
+            font-size: 1.5rem;
+            line-height: 1.4;
+        }
+        
+        .auth-subtitle-responsive {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+    }
+
+    /* Enhanced viewport optimization for auth pages - improved for compact fit */
+    @media (max-height: 900px) {
+        .auth-compact {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        
+        .auth-compact .space-y-4 > * + * {
+            margin-top: 0.5rem;
+        }
+        
+        .auth-compact .space-y-3 > * + * {
+            margin-top: 0.25rem;
+        }
+        
+        .auth-compact .space-y-2 > * + * {
+            margin-top: 0.125rem;
+        }
+    }
+    
+    @media (max-height: 800px) {
+        .auth-compact {
+            padding-top: 0.375rem;
+            padding-bottom: 0.375rem;
+        }
+        
+        .auth-compact .space-y-3 > * + * {
+            margin-top: 0.25rem;
+        }
+        
+        .auth-compact .space-y-2 > * + * {
+            margin-top: 0.125rem;
+        }
+        
+        /* Side panel optimizations */
+        .auth-side-panel .space-y-8 > * + * {
+            margin-top: 1.5rem;
+        }
+    }
+    
+    @media (max-height: 700px) {
+        .auth-compact {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+        
+        .auth-compact .space-y-3 > * + * {
+            margin-top: 0.125rem;
+        }
+        
+        .auth-compact .space-y-2 > * + * {
+            margin-top: 0.0625rem;
+        }
+        
+        /* Side panel optimizations for smaller heights */
+        .auth-side-panel .space-y-8 > * + * {
+            margin-top: 1rem;
+        }
+        
+        .auth-side-panel .space-y-4 > * + * {
+            margin-top: 0.75rem;
+        }
+    }
+    
+    /* Mobile-specific viewport and form improvements */
+    @media (max-width: 640px) {
+        /* Ensure mobile forms don't cause horizontal scroll */
+        .auth-compact {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+        
+        /* Optimize input sizing for mobile keyboards */
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            font-size: 16px; /* Prevents iOS zoom */
+            line-height: 1.5;
+        }
+        
+        /* Mobile-friendly button sizing */
+        button {
+            font-size: 16px;
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+        
+        /* Reduce background effects on mobile for performance */
+        .animate-float-gentle,
+        .animate-pulse-glow,
+        .animate-float-slow {
+            animation-duration: 8s;
+        }
+        
+        .animate-mesh-rotate {
+            animation: none; /* Disable heavy rotation on mobile */
+        }
+    }
+    
+    @media (max-width: 480px) {
+        /* Extra small mobile optimizations */
+        .auth-compact {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        /* Tighter spacing for very small screens */
+        .auth-compact .space-y-3 > * + * {
+            margin-top: 0.25rem;
+        }
+        
+        .auth-compact .space-y-4 > * + * {
+            margin-top: 0.375rem;
+        }
+    }
+    
+    /* Medium screen specific optimizations for single-column layout */
+    @media (max-width: 1023px) {
+        /* Ensure content fits in viewport on medium screens */
+        .lg\:hidden {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        
+        /* Optimize form spacing for medium screens */
+        .lg\:hidden .space-y-3 > * + * {
+            margin-top: 0.5rem;
+        }
+        
+        /* Compact titles and headers on medium screens */
+        .lg\:hidden h1 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .lg\:hidden p {
+            margin-bottom: 0.75rem;
+        }
+    }
+
+    /* Mobile-first responsive utilities */
+    @screen xs {
+        .xs\:max-w-\[360px\] {
+            max-width: 360px;
+        }
+        
+        .xs\:p-5 {
+            padding: 1.25rem;
+        }
+    }
+    
+    /* Touch-friendly improvements */
+    @media (hover: none) and (pointer: coarse) {
+        /* Increase tap targets on touch devices */
+        button,
+        [role="button"],
+        input[type="button"],
+        input[type="submit"],
+        a {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        /* Remove hover effects on touch devices */
+        .hover\:bg-white\/10:hover {
+            background-color: transparent;
+        }
+        
+        /* Ensure form inputs are comfortable for touch */
+        input,
+        textarea,
+        select {
+            font-size: 16px; /* Prevents zoom on iOS */
+            padding: 12px;
+        }
+    }
+    
+    /* High contrast mode support for accessibility */
+    @media (prefers-contrast: high) {
+        .border {
+            border-width: 2px;
+        }
+        
+        .shadow-sm,
+        .shadow,
+        .shadow-md,
+        .shadow-lg,
+        .shadow-xl {
+            box-shadow: 0 0 0 1px currentColor;
+        }
+    }
+    
+    /* Motion preferences and accessibility */
+    @media (prefers-reduced-motion: reduce) {
+        .animate-float-gentle,
+        .animate-pulse-glow,
+        .animate-gradient-shift,
+        .animate-text-glow,
+        .animate-counter-up {
+            animation: none;
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Remove transforms for reduced motion */
+        .transition-all,
+        .transition-colors,
+        .transition-transform {
+            transition: none !important;
+        }
+    }
+
     /* Improved skeleton animations */
     @keyframes skeleton-wave {
         0% {

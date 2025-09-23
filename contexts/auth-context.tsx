@@ -66,35 +66,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getInitialSession();
 
-    // Listen for auth changes with debouncing
+    // Listen for auth changes - simplified to avoid redirect loops
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
         if (!mounted) return;
 
+        console.log('Auth state change:', event, !!session?.user);
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
         setIsInitializing(false);
 
-        // Debounce navigation to prevent multiple redirects
-        if (event === "SIGNED_IN") {
-          // Use replace instead of push for better UX
-          router.replace("/polls");
-        } else if (event === "SIGNED_OUT") {
-          router.replace("/login");
+        // Handle email verification confirmation status
+        if (event === "USER_UPDATED" && session?.user?.email_confirmed_at) {
           setIsEmailConfirmationSent(false);
-        } else if (event === "USER_UPDATED") {
-          // Handle email verification updates
-          if (session?.user?.email_confirmed_at) {
-            setIsEmailConfirmationSent(false);
-            // If user was on verification page, redirect to polls
-            if (window.location.pathname === "/verify-email") {
-              router.replace("/polls");
-            }
-          }
+        } else if (event === "SIGNED_OUT") {
+          setIsEmailConfirmationSent(false);
         }
+
+        // Let middleware handle redirects to prevent conflicts
+        // Only refresh the router to update UI state
+        router.refresh();
       },
     );
 

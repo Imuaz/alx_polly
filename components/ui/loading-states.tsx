@@ -25,10 +25,10 @@ export function GlobalSpinner({ size = "default" }: { size?: "sm" | "default" | 
   );
 }
 
-// Page loading overlay
+// Page loading component (non-fixed to avoid Next.js scroll issues)
 export function PageLoadingOverlay({ message = "Loading..." }: { message?: string }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center space-y-4">
         <GlobalSpinner size="lg" />
         <p className="text-sm text-muted-foreground">{message}</p>

@@ -6,7 +6,7 @@ import { PageLoading, Skeleton } from "@/components/ui/loading-screen";
 import { MinimalAuthProvider } from "@/contexts/auth-context-minimal";
 import { useAuth as useFullAuth } from "@/contexts/auth-context";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { useAuthLoading } from "@/components/providers/simple-loading-provider";
+import { useAuthLoading } from "@/components/providers/smart-loading-provider";
 import { createClient } from "@/lib/supabase";
 
 import { DashboardHeader } from "./dashboard-header";
