@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { getClientAuthCallbackUrl } from "@/lib/utils/site-url";
 
 interface AuthContextType {
   user: User | null;
@@ -33,13 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
 
-  // Get the origin safely
-  const getOrigin = () => {
-    if (typeof window !== "undefined") {
-      return window.location.origin;
-    }
-    return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  };
+  // Site URL is now handled by the robust utility
 
   useEffect(() => {
     let mounted = true;
@@ -122,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${getOrigin()}/auth/callback`,
+          emailRedirectTo: getClientAuthCallbackUrl(),
         },
       });
 
@@ -153,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         type: "signup",
         email,
         options: {
-          emailRedirectTo: `${getOrigin()}/auth/callback`,
+          emailRedirectTo: getClientAuthCallbackUrl(),
         },
       });
       return { error };

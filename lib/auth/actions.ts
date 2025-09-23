@@ -11,6 +11,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { getAuthCallbackUrl } from "@/lib/utils/site-url"
 
 /**
  * Helper function to check if an error is a Next.js redirect error
@@ -115,9 +116,10 @@ export async function signUpAction(formData: FormData) {
       }
     }
 
-    // Get the origin URL for email confirmation redirect
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-
+    // Get callback URL and log for debugging
+    const callbackUrl = getAuthCallbackUrl();
+    console.log('📧 Email verification callback URL:', callbackUrl);
+    
     // Create new user account with metadata
     const { error, data } = await supabase.auth.signUp({
       email,
@@ -126,7 +128,7 @@ export async function signUpAction(formData: FormData) {
         data: {
           full_name: fullName, // Store full name in user metadata
         },
-        emailRedirectTo: `${origin}/auth/callback`, // Redirect after email confirmation
+        emailRedirectTo: callbackUrl, // Redirect after email confirmation
       },
     })
 
@@ -217,15 +219,16 @@ export async function resendVerificationAction(formData: FormData) {
       }
     }
 
-    // Get the origin URL for email confirmation redirect
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-
+    // Get callback URL and log for debugging
+    const callbackUrl = getAuthCallbackUrl();
+    console.log('📧 Resend verification callback URL:', callbackUrl);
+    
     // Resend verification email with proper redirect URL
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
       options: {
-        emailRedirectTo: `${origin}/auth/callback`,
+        emailRedirectTo: callbackUrl,
       },
     })
 
